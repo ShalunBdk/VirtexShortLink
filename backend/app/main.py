@@ -35,9 +35,14 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# Mount static files
-frontend_path = Path(__file__).parent.parent.parent / "frontend"
-if frontend_path.exists():
+# Mount static files - use absolute path for Docker compatibility
+# In Docker: /app/frontend, Locally: ../../../frontend from this file
+frontend_path = Path("/app/frontend")
+if not frontend_path.exists():
+    # Fallback for local development
+    frontend_path = Path(__file__).parent.parent.parent / "frontend"
+
+if frontend_path.exists() and (frontend_path / "static").exists():
     app.mount("/static", StaticFiles(directory=str(frontend_path / "static")), name="static")
 
 # Include routers
