@@ -20,7 +20,12 @@ limiter = Limiter(key_func=get_remote_address)
 def get_404_page() -> str:
     """Load 404 error page"""
     try:
-        frontend_path = Path(__file__).parent.parent.parent.parent / "frontend"
+        # Use absolute path for Docker compatibility
+        frontend_path = Path("/app/frontend")
+        if not frontend_path.exists():
+            # Fallback for local development
+            frontend_path = Path(__file__).parent.parent.parent.parent / "frontend"
+
         error_page = frontend_path / "404.html"
         if error_page.exists():
             return error_page.read_text(encoding='utf-8')
@@ -152,11 +157,19 @@ async def redirect_to_url(
 
     if not link:
         # Return custom 404 page instead of exception
-        return HTMLResponse(content=get_404_page(), status_code=404)
+        response = HTMLResponse(content=get_404_page(), status_code=404)
+        response.headers["Cache-Control"] = "no-cache, no-store, must-revalidate, max-age=0"
+        response.headers["Pragma"] = "no-cache"
+        response.headers["Expires"] = "0"
+        return response
 
     if not link.is_active:
         # Return custom 404 page for inactive links
-        return HTMLResponse(content=get_404_page(), status_code=410)
+        response = HTMLResponse(content=get_404_page(), status_code=410)
+        response.headers["Cache-Control"] = "no-cache, no-store, must-revalidate, max-age=0"
+        response.headers["Pragma"] = "no-cache"
+        response.headers["Expires"] = "0"
+        return response
 
     # Record click statistics
     click = Click(
@@ -173,4 +186,10 @@ async def redirect_to_url(
     db.commit()
 
     # Redirect to original URL (302 for tracking)
-    return RedirectResponse(url=link.original_url, status_code=302)
+    # Add headers to prevent caching
+    response = RedirectResponse(url=link.original_url, status_code=302)
+    response.headers["Cache-Control"] = "no-cache, no-store, must-revalidate, max-age=0"
+    response.headers["Pragma"] = "no-cache"
+    response.headers["Expires"] = "0"
+
+    return response
