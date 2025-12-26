@@ -29,10 +29,6 @@ COPY backend/.env /app/.env
 # Copy frontend files
 COPY frontend /app/frontend
 
-# Copy initialization script
-COPY docker-init.sh /app/docker-init.sh
-RUN chmod +x /app/docker-init.sh
-
 # Create directory for SQLite database
 RUN mkdir -p /app/data
 
