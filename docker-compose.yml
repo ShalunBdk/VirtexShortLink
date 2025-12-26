@@ -1,0 +1,40 @@
+version: '3.8'
+
+services:
+  shortlinks:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: virtexfood-shortlinks
+    ports:
+      - "8000:8000"
+    environment:
+      - DATABASE_URL=sqlite:///./data/shortlinks.db
+      - SECRET_KEY=${SECRET_KEY:-virtexfood-change-this-in-production}
+      - BASE_URL=${BASE_URL:-http://localhost:8000}
+      - SHORT_CODE_LENGTH=${SHORT_CODE_LENGTH:-5}
+      - RATE_LIMIT_PER_HOUR=${RATE_LIMIT_PER_HOUR:-10}
+      - RATE_LIMIT_PER_DAY=${RATE_LIMIT_PER_DAY:-50}
+    volumes:
+      # Persist database
+      - shortlinks-data:/app/data
+      # For development: mount code for hot reload
+      # - ./backend/app:/app/app
+      # - ./frontend:/app/frontend
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "python", "-c", "import requests; requests.get('http://localhost:8000/health')"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
+    networks:
+      - shortlinks-network
+
+volumes:
+  shortlinks-data:
+    driver: local
+
+networks:
+  shortlinks-network:
+    driver: bridge

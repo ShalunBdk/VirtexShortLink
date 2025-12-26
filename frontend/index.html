@@ -1,0 +1,367 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Virtex Food | Сокращение ссылок</title>
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@600;700;800&family=Roboto:wght@400;500&display=swap" rel="stylesheet">
+    <style>
+        /* --- Фирменная палитра Virtex Food --- */
+        :root {
+            /* Pantone 173 - Natural Orange */
+            --brand-orange: #D64005; 
+            /* Pantone 583 - Natural Green */
+            --brand-green: #A6B505;
+            
+            /* Оттенки для взаимодействий */
+            --brand-orange-hover: #b83604;
+            --brand-green-light: #F1F4D9; /* Очень светлый зеленый для фона */
+            
+            /* Нейтральные цвета */
+            --text-dark: #2D3436;
+            --text-grey: #636E72;
+            --bg-body: #FDFBF7; /* Теплый молочный фон */
+            --white: #FFFFFF;
+            
+            /* Настройки "мягкости" */
+            --radius-input: 16px;
+            --radius-card: 24px;
+            --shadow-soft: 0 15px 40px rgba(214, 64, 5, 0.08); /* Оранжевая тень */
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            font-family: 'Roboto', sans-serif;
+            background-color: var(--bg-body);
+            background-image: radial-gradient(circle at 10% 20%, rgba(166, 181, 5, 0.05) 0%, transparent 20%),
+                              radial-gradient(circle at 90% 80%, rgba(214, 64, 5, 0.05) 0%, transparent 20%);
+            color: var(--text-dark);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        /* --- Карточка --- */
+        .card {
+            background: var(--white);
+            padding: 45px;
+            border-radius: var(--radius-card);
+            box-shadow: var(--shadow-soft);
+            width: 100%;
+            max-width: 580px;
+            text-align: center;
+            border: 1px solid rgba(0,0,0,0.02);
+            transition: transform 0.3s ease;
+        }
+
+        .card:hover {
+            transform: translateY(-2px);
+        }
+
+        /* --- Логотип / Заголовок --- */
+        .logo-block {
+            margin-bottom: 25px;
+        }
+
+        .logo-text {
+            font-family: 'Montserrat', sans-serif;
+            font-size: 32px;
+            font-weight: 800;
+            letter-spacing: -0.5px;
+            color: var(--text-dark);
+        }
+
+        .text-orange { color: var(--brand-orange); }
+        .text-green { color: var(--brand-green); }
+
+        .subtitle {
+            font-size: 16px;
+            color: var(--text-grey);
+            margin-top: 8px;
+            line-height: 1.5;
+        }
+
+        /* --- Поле ввода --- */
+        .input-wrapper {
+            position: relative;
+            margin-bottom: 20px;
+            margin-top: 35px;
+        }
+
+        input[type="url"] {
+            width: 100%;
+            padding: 18px 25px;
+            border: 2px solid #EAEAEA;
+            border-radius: var(--radius-input);
+            font-size: 16px;
+            outline: none;
+            transition: all 0.3s ease;
+            background: #FAFAFA;
+            color: var(--text-dark);
+        }
+
+        input[type="url"]:focus {
+            border-color: var(--brand-orange);
+            background: #fff;
+            box-shadow: 0 0 0 4px rgba(214, 64, 5, 0.1);
+        }
+
+        input[type="url"]::placeholder {
+            color: #B2B2B2;
+        }
+
+        /* --- Кнопка действия --- */
+        .btn-main {
+            width: 100%;
+            padding: 18px;
+            /* Градиент для "вкусности" */
+            background: linear-gradient(135deg, var(--brand-orange) 0%, #E65100 100%);
+            color: white;
+            border: none;
+            border-radius: var(--radius-input);
+            font-family: 'Montserrat', sans-serif;
+            font-size: 16px;
+            font-weight: 700;
+            cursor: pointer;
+            transition: transform 0.2s, box-shadow 0.2s;
+            box-shadow: 0 8px 20px rgba(214, 64, 5, 0.25);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .btn-main:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 12px 25px rgba(214, 64, 5, 0.35);
+        }
+
+        .btn-main:active {
+            transform: translateY(0);
+        }
+
+        /* --- Блок результата --- */
+        .result-box {
+            margin-top: 30px;
+            background: var(--brand-green-light); /* Очень светлый зеленый фон */
+            padding: 20px;
+            border-radius: var(--radius-input);
+            display: none; /* Скрыто по умолчанию */
+            flex-direction: column;
+            gap: 15px;
+            animation: fadeIn 0.5s ease;
+            border: 1px solid rgba(166, 181, 5, 0.2);
+        }
+
+        .result-box.active {
+            display: flex;
+        }
+
+        .link-label {
+            font-size: 13px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            color: #7CB342;
+            font-weight: 700;
+        }
+
+        .short-url {
+            font-family: 'Montserrat', sans-serif;
+            font-size: 22px;
+            font-weight: 700;
+            color: var(--brand-orange);
+            word-break: break-all;
+        }
+
+        .copy-row {
+            display: flex;
+            justify-content: center;
+        }
+
+        .btn-copy {
+            background: transparent;
+            color: var(--brand-green); /* Зеленый текст кнопки */
+            border: 2px solid var(--brand-green);
+            padding: 10px 25px;
+            border-radius: 50px;
+            font-weight: 600;
+            font-size: 14px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .btn-copy:hover {
+            background: var(--brand-green);
+            color: white;
+        }
+
+        /* --- Лоадер --- */
+        .loader {
+            width: 20px;
+            height: 20px;
+            border: 3px solid rgba(255,255,255,0.3);
+            border-radius: 50%;
+            border-top-color: #fff;
+            animation: spin 0.8s ease-in-out infinite;
+            display: none;
+        }
+
+        @keyframes spin { to { transform: rotate(360deg); } }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+
+        /* --- Footer --- */
+        .footer {
+            margin-top: 40px;
+            font-size: 13px;
+            color: #A0A0A0;
+        }
+
+    </style>
+</head>
+<body>
+
+    <div class="card">
+        <div class="logo-block">
+            <div class="logo-text">
+                Virtex<span class="text-orange">Food</span>
+            </div>
+            <p class="subtitle">Внутренний сервис коротких ссылок</p>
+        </div>
+
+        <div class="input-wrapper">
+            <input type="url" id="longUrl" placeholder="Вставьте вашу длинную ссылку сюда..." required>
+        </div>
+
+        <button class="btn-main" id="shortenBtn">
+            <span class="btn-text">Получить короткую ссылку</span>
+            <div class="loader" id="btnLoader"></div>
+        </button>
+
+        <div class="result-box" id="resultBox">
+            <div class="link-label">Готово! Ваша ссылка:</div>
+            <div class="short-url" id="resultLink">https://vrxf.ru/...</div>
+            <div class="copy-row">
+                <button class="btn-copy" id="copyBtn">Копировать</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="footer">
+        &copy; <span id="currentYear"></span> Virtex Food IT Department
+    </div>
+
+    <script>
+        const shortenBtn = document.getElementById('shortenBtn');
+        const longUrlInput = document.getElementById('longUrl');
+        const resultBox = document.getElementById('resultBox');
+        const resultLink = document.getElementById('resultLink');
+        const copyBtn = document.getElementById('copyBtn');
+        const btnText = document.querySelector('.btn-text');
+        const btnLoader = document.getElementById('btnLoader');
+
+        shortenBtn.addEventListener('click', async () => {
+            const url = longUrlInput.value.trim();
+            if (!url) {
+                longUrlInput.focus();
+                // Легкое покачивание поля при ошибке
+                longUrlInput.style.transform = "translateX(5px)";
+                setTimeout(() => longUrlInput.style.transform = "translateX(0)", 100);
+                return;
+            }
+
+            // UI Loading
+            btnText.style.display = 'none';
+            btnLoader.style.display = 'block';
+            shortenBtn.disabled = true;
+            resultBox.classList.remove('active');
+
+            // Real API call
+            try {
+                const response = await fetch('/api/shorten', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ url: url })
+                });
+
+                if (!response.ok) {
+                    const errorData = await response.json();
+                    throw new Error(errorData.detail || 'Ошибка при создании короткой ссылки');
+                }
+
+                const data = await response.json();
+
+                // Display the short URL
+                resultLink.textContent = data.short_url;
+                resultBox.classList.add('active');
+
+            } catch (error) {
+                alert(error.message || 'Произошла ошибка. Попробуйте снова.');
+                console.error('Error:', error);
+            } finally {
+                // Reset button
+                btnText.style.display = 'block';
+                btnLoader.style.display = 'none';
+                shortenBtn.disabled = false;
+            }
+        });
+
+        // Функция копирования с fallback
+        function copyToClipboard(text) {
+            // Современный метод (Clipboard API)
+            if (navigator.clipboard && window.isSecureContext) {
+                return navigator.clipboard.writeText(text);
+            } else {
+                // Fallback для старых браузеров или HTTP
+                const textArea = document.createElement('textarea');
+                textArea.value = text;
+                textArea.style.position = 'fixed';
+                textArea.style.left = '-999999px';
+                textArea.style.top = '-999999px';
+                document.body.appendChild(textArea);
+                textArea.focus();
+                textArea.select();
+
+                return new Promise((resolve, reject) => {
+                    try {
+                        document.execCommand('copy');
+                        textArea.remove();
+                        resolve();
+                    } catch (error) {
+                        textArea.remove();
+                        reject(error);
+                    }
+                });
+            }
+        }
+
+        copyBtn.addEventListener('click', () => {
+            const textToCopy = resultLink.textContent;
+            const originalText = copyBtn.textContent;
+
+            copyToClipboard(textToCopy).then(() => {
+                // Изменяем стиль кнопки при копировании
+                copyBtn.textContent = 'Скопировано!';
+                copyBtn.style.backgroundColor = 'var(--brand-green)';
+                copyBtn.style.color = 'white';
+
+                setTimeout(() => {
+                    copyBtn.textContent = originalText;
+                    copyBtn.style.backgroundColor = 'transparent';
+                    copyBtn.style.color = 'var(--brand-green)';
+                }, 2000);
+            }).catch(error => {
+                console.error('Failed to copy:', error);
+                alert('Не удалось скопировать ссылку. Скопируйте вручную: ' + textToCopy);
+            });
+        });
+
+        // Set current year in footer
+        document.getElementById('currentYear').textContent = new Date().getFullYear();
+    </script>
+</body>
+</html>
