@@ -898,7 +898,12 @@
 
                 const data = await response.json();
 
-                showToast(`Ссылка создана: ${data.short_url}`, 'success');
+                // Show different message based on whether link existed or was created
+                if (data.existing) {
+                    showToast(`Ссылка уже существовала: ${data.short_url}`, 'info');
+                } else {
+                    showToast(`Ссылка создана: ${data.short_url}`, 'success');
+                }
 
                 document.getElementById('createLinkForm').reset();
 

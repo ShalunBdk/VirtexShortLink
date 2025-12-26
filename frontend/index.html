@@ -243,6 +243,9 @@
         <div class="result-box" id="resultBox">
             <div class="link-label">Готово! Ваша ссылка:</div>
             <div class="short-url" id="resultLink">https://vrxf.ru/...</div>
+            <div id="existingNote" style="display: none; font-size: 13px; color: #666; margin-top: 8px; font-style: italic;">
+                ℹ️ Эта ссылка уже существовала в системе
+            </div>
             <div class="copy-row">
                 <button class="btn-copy" id="copyBtn">Копировать</button>
             </div>
@@ -297,6 +300,15 @@
 
                 // Display the short URL
                 resultLink.textContent = data.short_url;
+
+                // Show note if link already existed
+                const existingNote = document.getElementById('existingNote');
+                if (data.existing) {
+                    existingNote.style.display = 'block';
+                } else {
+                    existingNote.style.display = 'none';
+                }
+
                 resultBox.classList.add('active');
 
             } catch (error) {

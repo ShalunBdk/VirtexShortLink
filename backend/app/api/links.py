@@ -73,6 +73,21 @@ async def create_short_link(
             detail="URL appears to be spam and cannot be shortened"
         )
 
+    # Check if this URL already exists (to avoid duplicates)
+    existing_link = db.query(Link).filter(
+        Link.original_url == link_data.url,
+        Link.is_active == True
+    ).first()
+
+    if existing_link:
+        # Return existing link instead of creating a new one
+        return {
+            "short_url": f"{settings.BASE_URL}/{existing_link.short_code}",
+            "short_code": existing_link.short_code,
+            "original_url": existing_link.original_url,
+            "existing": True
+        }
+
     # Handle custom alias or generate code
     if link_data.custom_alias:
         # Validate custom alias
@@ -113,7 +128,8 @@ async def create_short_link(
     return {
         "short_url": f"{settings.BASE_URL}/{short_code}",
         "short_code": short_code,
-        "original_url": link_data.url
+        "original_url": link_data.url,
+        "existing": False
     }
 
 
