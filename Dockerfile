@@ -24,7 +24,6 @@ RUN pip install --no-cache-dir -r requirements.txt
 # Copy backend code
 COPY backend/app /app/app
 COPY backend/init_db.py /app/
-COPY backend/.env /app/.env
 
 # Copy frontend files
 COPY frontend /app/frontend
