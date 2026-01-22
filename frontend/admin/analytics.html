@@ -1,0 +1,839 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Аналитика ссылки | Virtex Food</title>
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@600;700;800&family=Roboto:wght@400;500;600&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        :root {
+            --brand-orange: #D64005;
+            --brand-green: #A6B505;
+            --brand-orange-hover: #b83604;
+            --text-dark: #2D3436;
+            --text-grey: #636E72;
+            --bg-body: #FDFBF7;
+            --white: #FFFFFF;
+            --radius-card: 16px;
+            --shadow-soft: 0 8px 24px rgba(214, 64, 5, 0.08);
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            font-family: 'Roboto', sans-serif;
+            background-color: var(--bg-body);
+            color: var(--text-dark);
+            min-height: 100vh;
+        }
+
+        .navbar {
+            background: var(--white);
+            box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+            padding: 15px 30px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .nav-brand {
+            font-family: 'Montserrat', sans-serif;
+            font-size: 20px;
+            font-weight: 800;
+            text-decoration: none;
+            color: inherit;
+        }
+
+        .text-orange { color: var(--brand-orange); }
+
+        .nav-links {
+            display: flex;
+            gap: 20px;
+            align-items: center;
+        }
+
+        .nav-links a {
+            color: var(--text-grey);
+            text-decoration: none;
+            font-weight: 500;
+            transition: color 0.2s;
+        }
+
+        .nav-links a:hover {
+            color: var(--brand-orange);
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 30px 20px;
+        }
+
+        .page-header {
+            margin-bottom: 30px;
+        }
+
+        .page-title {
+            font-family: 'Montserrat', sans-serif;
+            font-size: 28px;
+            font-weight: 800;
+            margin-bottom: 10px;
+        }
+
+        .link-info {
+            display: flex;
+            gap: 20px;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+
+        .link-code {
+            font-family: 'Courier New', monospace;
+            font-size: 18px;
+            font-weight: 600;
+            color: var(--brand-orange);
+            background: #FFF3E0;
+            padding: 8px 16px;
+            border-radius: 8px;
+        }
+
+        .link-url {
+            color: var(--text-grey);
+            font-size: 14px;
+            max-width: 500px;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+
+        /* Stats Cards */
+        .stats-row {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+
+        .stat-card {
+            background: var(--white);
+            padding: 25px;
+            border-radius: var(--radius-card);
+            box-shadow: var(--shadow-soft);
+            text-align: center;
+        }
+
+        .stat-value {
+            font-size: 32px;
+            font-weight: 700;
+            color: var(--brand-orange);
+        }
+
+        .stat-value.green { color: var(--brand-green); }
+
+        .stat-label {
+            font-size: 13px;
+            color: var(--text-grey);
+            margin-top: 5px;
+        }
+
+        /* Charts Section */
+        .charts-section {
+            display: grid;
+            grid-template-columns: 2fr 1fr;
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+
+        .chart-card {
+            background: var(--white);
+            padding: 25px;
+            border-radius: var(--radius-card);
+            box-shadow: var(--shadow-soft);
+        }
+
+        .chart-title {
+            font-weight: 600;
+            margin-bottom: 20px;
+            color: var(--text-dark);
+        }
+
+        .chart-wrapper {
+            position: relative;
+            height: 300px;
+        }
+
+        /* Clicks Table */
+        .table-card {
+            background: var(--white);
+            border-radius: var(--radius-card);
+            box-shadow: var(--shadow-soft);
+            overflow: hidden;
+        }
+
+        .table-header {
+            padding: 20px 25px;
+            background: linear-gradient(135deg, var(--brand-orange) 0%, #E65100 100%);
+            color: white;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .table-header h3 {
+            font-family: 'Montserrat', sans-serif;
+        }
+
+        .filter-row {
+            padding: 15px 25px;
+            background: #F8F9FA;
+            display: flex;
+            gap: 15px;
+            flex-wrap: wrap;
+            align-items: center;
+        }
+
+        .filter-group {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .filter-group label {
+            font-size: 13px;
+            color: var(--text-grey);
+        }
+
+        .filter-group select,
+        .filter-group input {
+            padding: 8px 12px;
+            border: 1px solid #DDD;
+            border-radius: 6px;
+            font-size: 14px;
+            outline: none;
+        }
+
+        .filter-group select:focus,
+        .filter-group input:focus {
+            border-color: var(--brand-orange);
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        thead {
+            background: #F8F9FA;
+        }
+
+        th {
+            text-align: left;
+            padding: 15px 20px;
+            font-weight: 600;
+            font-size: 12px;
+            color: var(--text-grey);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        td {
+            padding: 15px 20px;
+            border-bottom: 1px solid #F0F0F0;
+            font-size: 14px;
+        }
+
+        tr:hover {
+            background: #FAFAFA;
+        }
+
+        .ip-cell {
+            font-family: 'Courier New', monospace;
+            font-size: 13px;
+        }
+
+        .geo-cell {
+            display: flex;
+            flex-direction: column;
+            gap: 2px;
+        }
+
+        .country {
+            font-weight: 500;
+        }
+
+        .city {
+            font-size: 12px;
+            color: var(--text-grey);
+        }
+
+        .referer-cell {
+            max-width: 250px;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+            font-size: 13px;
+            color: var(--text-grey);
+        }
+
+        .datetime-cell {
+            white-space: nowrap;
+        }
+
+        .date {
+            font-weight: 500;
+        }
+
+        .time {
+            font-size: 12px;
+            color: var(--text-grey);
+        }
+
+        .badge {
+            display: inline-block;
+            padding: 3px 8px;
+            border-radius: 10px;
+            font-size: 11px;
+            font-weight: 600;
+        }
+
+        .badge-unique {
+            background: #E8F5E9;
+            color: #2E7D32;
+        }
+
+        .badge-repeat {
+            background: #FFF3E0;
+            color: #E65100;
+        }
+
+        .no-data {
+            text-align: center;
+            padding: 60px;
+            color: var(--text-grey);
+        }
+
+        .loader {
+            text-align: center;
+            padding: 60px;
+            color: var(--brand-orange);
+        }
+
+        /* Pagination */
+        .pagination {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 10px;
+            padding: 20px;
+            border-top: 1px solid #F0F0F0;
+        }
+
+        .pagination button {
+            padding: 8px 16px;
+            border: 1px solid #DDD;
+            background: white;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: 500;
+            transition: all 0.2s;
+        }
+
+        .pagination button:hover:not(:disabled) {
+            border-color: var(--brand-orange);
+            color: var(--brand-orange);
+        }
+
+        .pagination button:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        .pagination .page-info {
+            color: var(--text-grey);
+            font-size: 14px;
+        }
+
+        /* Responsive */
+        @media (max-width: 1024px) {
+            .charts-section {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        @media (max-width: 768px) {
+            .navbar {
+                flex-direction: column;
+                gap: 15px;
+            }
+
+            .link-info {
+                flex-direction: column;
+                align-items: flex-start;
+            }
+
+            .filter-row {
+                flex-direction: column;
+                align-items: stretch;
+            }
+
+            .table-card {
+                overflow-x: auto;
+            }
+
+            td, th {
+                padding: 12px 15px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <nav class="navbar">
+        <a href="/admin/" class="nav-brand">
+            Virtex<span class="text-orange">Food</span> Admin
+        </a>
+        <div class="nav-links">
+            <a href="/admin/">Назад к списку</a>
+        </div>
+    </nav>
+
+    <div class="container">
+        <div class="page-header">
+            <h1 class="page-title">Аналитика ссылки</h1>
+            <div class="link-info">
+                <span class="link-code" id="linkCode">---</span>
+                <span class="link-url" id="linkUrl">Загрузка...</span>
+            </div>
+        </div>
+
+        <!-- Stats -->
+        <div class="stats-row">
+            <div class="stat-card">
+                <div class="stat-value" id="totalClicks">0</div>
+                <div class="stat-label">Всего кликов</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value green" id="uniqueClicks">0</div>
+                <div class="stat-label">Уникальных</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value" id="uniqueRatio">0%</div>
+                <div class="stat-label">Уникальность</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value" id="topCountry">-</div>
+                <div class="stat-label">Топ страна</div>
+            </div>
+        </div>
+
+        <!-- Charts -->
+        <div class="charts-section">
+            <div class="chart-card">
+                <div class="chart-title">Клики за последние 30 дней</div>
+                <div class="chart-wrapper">
+                    <canvas id="clicksChart"></canvas>
+                </div>
+            </div>
+            <div class="chart-card">
+                <div class="chart-title">По странам</div>
+                <div class="chart-wrapper">
+                    <canvas id="countriesChart"></canvas>
+                </div>
+            </div>
+        </div>
+
+        <!-- Clicks Table -->
+        <div class="table-card">
+            <div class="table-header">
+                <h3>История переходов</h3>
+                <span id="totalCount">0 записей</span>
+            </div>
+
+            <div class="filter-row">
+                <div class="filter-group">
+                    <label>Период:</label>
+                    <select id="periodFilter">
+                        <option value="all">Все время</option>
+                        <option value="today">Сегодня</option>
+                        <option value="7d" selected>7 дней</option>
+                        <option value="30d">30 дней</option>
+                        <option value="90d">90 дней</option>
+                    </select>
+                </div>
+                <div class="filter-group">
+                    <label>Страна:</label>
+                    <select id="countryFilter">
+                        <option value="">Все</option>
+                    </select>
+                </div>
+                <div class="filter-group">
+                    <label>Тип:</label>
+                    <select id="uniqueFilter">
+                        <option value="">Все</option>
+                        <option value="unique">Уникальные</option>
+                        <option value="repeat">Повторные</option>
+                    </select>
+                </div>
+            </div>
+
+            <div id="tableLoader" class="loader">Загрузка...</div>
+
+            <table id="clicksTable" style="display: none;">
+                <thead>
+                    <tr>
+                        <th>Дата / Время</th>
+                        <th>IP адрес</th>
+                        <th>Гео</th>
+                        <th>Источник</th>
+                        <th>Браузер</th>
+                        <th>Тип</th>
+                    </tr>
+                </thead>
+                <tbody id="clicksTableBody"></tbody>
+            </table>
+
+            <div id="noData" class="no-data" style="display: none;">
+                Нет данных для отображения
+            </div>
+
+            <div class="pagination" id="pagination" style="display: none;">
+                <button id="prevBtn" onclick="changePage(-1)">← Назад</button>
+                <span class="page-info" id="pageInfo">Стр. 1 из 1</span>
+                <button id="nextBtn" onclick="changePage(1)">Вперед →</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let authToken = localStorage.getItem('authToken');
+        let linkId = null;
+        let currentPage = 1;
+        let totalPages = 1;
+        let pageSize = 50;
+        let allClicks = [];
+        let filteredClicks = [];
+        let clicksChart = null;
+        let countriesChart = null;
+
+        // Check auth
+        if (!authToken) {
+            window.location.href = '/admin/';
+        }
+
+        // Get link ID from URL
+        const urlParams = new URLSearchParams(window.location.search);
+        linkId = urlParams.get('id');
+
+        if (!linkId) {
+            window.location.href = '/admin/';
+        }
+
+        // Load data on page load
+        window.addEventListener('DOMContentLoaded', async () => {
+            await loadLinkInfo();
+            await loadAnalytics();
+            await loadClicks();
+
+            // Filter change handlers
+            document.getElementById('periodFilter').addEventListener('change', applyFilters);
+            document.getElementById('countryFilter').addEventListener('change', applyFilters);
+            document.getElementById('uniqueFilter').addEventListener('change', applyFilters);
+        });
+
+        // Load link info
+        async function loadLinkInfo() {
+            try {
+                const response = await fetch(`/api/admin/links/${linkId}`, {
+                    headers: { 'Authorization': `Bearer ${authToken}` }
+                });
+
+                if (response.status === 401) {
+                    window.location.href = '/admin/';
+                    return;
+                }
+
+                if (response.ok) {
+                    const link = await response.json();
+                    document.getElementById('linkCode').textContent = link.short_code;
+                    document.getElementById('linkUrl').textContent = link.original_url;
+                    document.getElementById('linkUrl').title = link.original_url;
+                    document.title = `Аналитика: ${link.short_code} | Virtex Food`;
+                }
+            } catch (error) {
+                console.error('Failed to load link info:', error);
+            }
+        }
+
+        // Load analytics summary
+        async function loadAnalytics() {
+            try {
+                const response = await fetch(`/api/admin/links/${linkId}/analytics?period=30d`, {
+                    headers: { 'Authorization': `Bearer ${authToken}` }
+                });
+
+                if (response.ok) {
+                    const data = await response.json();
+
+                    document.getElementById('totalClicks').textContent = data.total_clicks;
+                    document.getElementById('uniqueClicks').textContent = data.unique_clicks;
+                    document.getElementById('uniqueRatio').textContent = Math.round(data.unique_ratio * 100) + '%';
+
+                    if (data.clicks_by_country.length > 0) {
+                        document.getElementById('topCountry').textContent = data.clicks_by_country[0].country_name || '-';
+                    }
+
+                    // Update charts
+                    updateClicksChart(data.clicks_by_time);
+                    updateCountriesChart(data.clicks_by_country);
+
+                    // Populate country filter
+                    const countrySelect = document.getElementById('countryFilter');
+                    data.clicks_by_country.forEach(c => {
+                        if (c.country_code) {
+                            const option = document.createElement('option');
+                            option.value = c.country_code;
+                            option.textContent = c.country_name || c.country_code;
+                            countrySelect.appendChild(option);
+                        }
+                    });
+                }
+            } catch (error) {
+                console.error('Failed to load analytics:', error);
+            }
+        }
+
+        // Load all clicks
+        async function loadClicks() {
+            const loader = document.getElementById('tableLoader');
+            const table = document.getElementById('clicksTable');
+            const noData = document.getElementById('noData');
+
+            loader.style.display = 'block';
+            table.style.display = 'none';
+            noData.style.display = 'none';
+
+            try {
+                const response = await fetch(`/api/admin/links/${linkId}/clicks?limit=1000`, {
+                    headers: { 'Authorization': `Bearer ${authToken}` }
+                });
+
+                if (response.ok) {
+                    const data = await response.json();
+                    allClicks = data.clicks || [];
+                    applyFilters();
+                }
+            } catch (error) {
+                console.error('Failed to load clicks:', error);
+                noData.style.display = 'block';
+                noData.textContent = 'Ошибка загрузки данных';
+            } finally {
+                loader.style.display = 'none';
+            }
+        }
+
+        // Apply filters
+        function applyFilters() {
+            const period = document.getElementById('periodFilter').value;
+            const country = document.getElementById('countryFilter').value;
+            const uniqueType = document.getElementById('uniqueFilter').value;
+
+            const now = new Date();
+            let startDate = null;
+
+            if (period === 'today') {
+                startDate = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+            } else if (period === '7d') {
+                startDate = new Date(now - 7 * 24 * 60 * 60 * 1000);
+            } else if (period === '30d') {
+                startDate = new Date(now - 30 * 24 * 60 * 60 * 1000);
+            } else if (period === '90d') {
+                startDate = new Date(now - 90 * 24 * 60 * 60 * 1000);
+            }
+
+            filteredClicks = allClicks.filter(click => {
+                // Period filter
+                if (startDate) {
+                    const clickDate = new Date(click.clicked_at);
+                    if (clickDate < startDate) return false;
+                }
+
+                // Country filter
+                if (country && click.country_code !== country) return false;
+
+                // Unique filter
+                if (uniqueType === 'unique' && !click.is_unique) return false;
+                if (uniqueType === 'repeat' && click.is_unique) return false;
+
+                return true;
+            });
+
+            currentPage = 1;
+            renderTable();
+        }
+
+        // Render table
+        function renderTable() {
+            const table = document.getElementById('clicksTable');
+            const tbody = document.getElementById('clicksTableBody');
+            const noData = document.getElementById('noData');
+            const pagination = document.getElementById('pagination');
+
+            document.getElementById('totalCount').textContent = `${filteredClicks.length} записей`;
+
+            if (filteredClicks.length === 0) {
+                table.style.display = 'none';
+                noData.style.display = 'block';
+                pagination.style.display = 'none';
+                return;
+            }
+
+            // Pagination
+            totalPages = Math.ceil(filteredClicks.length / pageSize);
+            const start = (currentPage - 1) * pageSize;
+            const end = start + pageSize;
+            const pageClicks = filteredClicks.slice(start, end);
+
+            tbody.innerHTML = pageClicks.map(click => {
+                const date = new Date(click.clicked_at);
+                const dateStr = date.toLocaleDateString('ru-RU');
+                const timeStr = date.toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+
+                return `
+                    <tr>
+                        <td class="datetime-cell">
+                            <div class="date">${dateStr}</div>
+                            <div class="time">${timeStr}</div>
+                        </td>
+                        <td class="ip-cell">${click.ip_address || '-'}</td>
+                        <td class="geo-cell">
+                            <span class="country">${click.country_name || 'Unknown'}</span>
+                            <span class="city">${click.city || '-'}</span>
+                        </td>
+                        <td class="referer-cell" title="${click.referer || 'Direct'}">${formatReferer(click.referer)}</td>
+                        <td class="referer-cell" title="${click.user_agent || '-'}">${formatUserAgent(click.user_agent)}</td>
+                        <td>
+                            <span class="badge ${click.is_unique ? 'badge-unique' : 'badge-repeat'}">
+                                ${click.is_unique ? 'Уникальный' : 'Повторный'}
+                            </span>
+                        </td>
+                    </tr>
+                `;
+            }).join('');
+
+            table.style.display = 'table';
+            noData.style.display = 'none';
+
+            // Update pagination
+            if (totalPages > 1) {
+                pagination.style.display = 'flex';
+                document.getElementById('pageInfo').textContent = `Стр. ${currentPage} из ${totalPages}`;
+                document.getElementById('prevBtn').disabled = currentPage === 1;
+                document.getElementById('nextBtn').disabled = currentPage === totalPages;
+            } else {
+                pagination.style.display = 'none';
+            }
+        }
+
+        // Change page
+        function changePage(delta) {
+            currentPage += delta;
+            if (currentPage < 1) currentPage = 1;
+            if (currentPage > totalPages) currentPage = totalPages;
+            renderTable();
+        }
+
+        // Format referer
+        function formatReferer(referer) {
+            if (!referer) return 'Direct';
+            try {
+                const url = new URL(referer);
+                return url.hostname;
+            } catch {
+                return referer.length > 30 ? referer.substring(0, 30) + '...' : referer;
+            }
+        }
+
+        // Format user agent
+        function formatUserAgent(ua) {
+            if (!ua) return '-';
+
+            // Simple browser detection
+            if (ua.includes('Chrome') && !ua.includes('Edg')) return 'Chrome';
+            if (ua.includes('Firefox')) return 'Firefox';
+            if (ua.includes('Safari') && !ua.includes('Chrome')) return 'Safari';
+            if (ua.includes('Edg')) return 'Edge';
+            if (ua.includes('Opera') || ua.includes('OPR')) return 'Opera';
+
+            return ua.length > 20 ? ua.substring(0, 20) + '...' : ua;
+        }
+
+        // Update clicks chart
+        function updateClicksChart(data) {
+            const ctx = document.getElementById('clicksChart').getContext('2d');
+
+            if (clicksChart) clicksChart.destroy();
+
+            const labels = data.map(d => {
+                const date = new Date(d.timestamp);
+                return date.toLocaleDateString('ru-RU', { month: 'short', day: 'numeric' });
+            });
+
+            clicksChart = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: labels,
+                    datasets: [
+                        {
+                            label: 'Всего',
+                            data: data.map(d => d.clicks),
+                            borderColor: '#D64005',
+                            backgroundColor: 'rgba(214, 64, 5, 0.1)',
+                            fill: true,
+                            tension: 0.4
+                        },
+                        {
+                            label: 'Уникальных',
+                            data: data.map(d => d.unique_clicks),
+                            borderColor: '#A6B505',
+                            backgroundColor: 'rgba(166, 181, 5, 0.1)',
+                            fill: true,
+                            tension: 0.4
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: { legend: { position: 'bottom' } },
+                    scales: { y: { beginAtZero: true } }
+                }
+            });
+        }
+
+        // Update countries chart
+        function updateCountriesChart(data) {
+            const ctx = document.getElementById('countriesChart').getContext('2d');
+
+            if (countriesChart) countriesChart.destroy();
+
+            const topCountries = data.slice(0, 6);
+
+            countriesChart = new Chart(ctx, {
+                type: 'doughnut',
+                data: {
+                    labels: topCountries.map(d => d.country_name || 'Unknown'),
+                    datasets: [{
+                        data: topCountries.map(d => d.clicks),
+                        backgroundColor: ['#D64005', '#A6B505', '#2196F3', '#FF9800', '#9C27B0', '#607D8B']
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: { legend: { position: 'bottom' } }
+                }
+            });
+        }
+    </script>
+</body>
+</html>

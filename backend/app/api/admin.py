@@ -319,6 +319,55 @@ async def remove_from_blacklist(
     return {"message": f"IP {ip_address} removed from blacklist"}
 
 
+@router.get("/links/{link_id}/clicks")
+async def get_link_clicks(
+    link_id: int,
+    limit: int = Query(100, ge=1, le=1000),
+    offset: int = Query(0, ge=0),
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    """
+    Get detailed click history for a link.
+
+    Requires authentication.
+    """
+    link = db.query(Link).filter(Link.id == link_id).first()
+
+    if not link:
+        raise HTTPException(status_code=404, detail="Link not found")
+
+    # Get clicks with all details
+    clicks = db.query(Click).filter(
+        Click.link_id == link_id
+    ).order_by(desc(Click.clicked_at)).offset(offset).limit(limit).all()
+
+    total = db.query(func.count(Click.id)).filter(Click.link_id == link_id).scalar()
+
+    clicks_data = [
+        {
+            "id": click.id,
+            "clicked_at": click.clicked_at.isoformat() if click.clicked_at else None,
+            "ip_address": click.ip_address,
+            "user_agent": click.user_agent,
+            "referer": click.referer,
+            "country_code": click.country_code,
+            "country_name": click.country_name,
+            "city": click.city,
+            "is_unique": click.is_unique
+        }
+        for click in clicks
+    ]
+
+    return {
+        "link_id": link_id,
+        "total": total,
+        "limit": limit,
+        "offset": offset,
+        "clicks": clicks_data
+    }
+
+
 @router.get("/links/{link_id}/analytics", response_model=LinkAnalytics)
 async def get_link_analytics_endpoint(
     link_id: int,

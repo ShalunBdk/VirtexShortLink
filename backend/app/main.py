@@ -71,6 +71,17 @@ async def admin_panel():
     return HTMLResponse(content="<h1>Admin Panel</h1><p>Coming soon...</p>")
 
 
+# Admin analytics page
+@app.get("/admin/analytics.html", response_class=HTMLResponse)
+@app.get("/admin/analytics", response_class=HTMLResponse)
+async def admin_analytics():
+    """Serve the admin analytics page"""
+    analytics_file = frontend_path / "admin" / "analytics.html"
+    if analytics_file.exists():
+        return HTMLResponse(content=analytics_file.read_text(encoding='utf-8'))
+    return HTMLResponse(content="<h1>Analytics</h1><p>Page not found.</p>", status_code=404)
+
+
 # Health check endpoint
 @app.get("/health")
 async def health_check():

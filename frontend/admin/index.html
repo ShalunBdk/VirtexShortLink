@@ -1273,7 +1273,8 @@
                             <td>${new Date(link.created_at).toLocaleDateString('ru-RU')}</td>
                             <td><span class="badge ${link.is_active ? 'badge-active' : 'badge-inactive'}">${link.is_active ? 'Активна' : 'Неактивна'}</span></td>
                             <td>
-                                <button class="btn-icon" onclick="showAnalytics(${link.id}, '${link.short_code}')" title="Аналитика">📊</button>
+                                <button class="btn-icon" onclick="showAnalytics(${link.id}, '${link.short_code}')" title="Быстрая аналитика">📊</button>
+                                <button class="btn-icon" onclick="openAnalyticsPage(${link.id})" title="Подробная аналитика">📈</button>
                                 <button class="btn-icon" onclick="toggleLinkStatus(${link.id})" title="Переключить статус">
                                     ${link.is_active ? '⏸️' : '▶️'}
                                 </button>
@@ -1502,6 +1503,11 @@
             } catch {
                 return url.length > 30 ? url.substring(0, 30) + '...' : url;
             }
+        }
+
+        // Open detailed analytics page
+        function openAnalyticsPage(linkId) {
+            window.open(`/admin/analytics.html?id=${linkId}`, '_blank');
         }
 
         // Close analytics
