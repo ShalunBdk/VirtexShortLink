@@ -1,4 +1,4 @@
-from typing import List, Optional
+from typing import List, Optional, Literal
 from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy.orm import Session
 from sqlalchemy import func, desc
@@ -6,7 +6,9 @@ from sqlalchemy import func, desc
 from ..database import get_db
 from ..models import Link, Click, User, IPBlacklist
 from ..schemas.link import LinkResponse, LinkUpdate, LinkStats
+from ..schemas.analytics import LinkAnalytics
 from ..core.security import get_current_user
+from ..services.analytics import get_link_analytics
 from ..config import settings
 
 router = APIRouter(prefix="/admin", tags=["admin"])
@@ -57,6 +59,7 @@ async def get_all_links(
             "created_at": link.created_at,
             "created_by": link.created_by,
             "clicks_count": link.clicks_count,
+            "unique_clicks_count": link.unique_clicks_count,
             "is_active": link.is_active
         }
         result.append(link_dict)
@@ -88,6 +91,7 @@ async def get_link_by_id(
         "created_at": link.created_at,
         "created_by": link.created_by,
         "clicks_count": link.clicks_count,
+        "unique_clicks_count": link.unique_clicks_count,
         "is_active": link.is_active
     }
 
@@ -127,6 +131,7 @@ async def update_link(
         "created_at": link.created_at,
         "created_by": link.created_by,
         "clicks_count": link.clicks_count,
+        "unique_clicks_count": link.unique_clicks_count,
         "is_active": link.is_active
     }
 
@@ -191,6 +196,7 @@ async def get_overview_stats(
     total_links = db.query(func.count(Link.id)).scalar()
     active_links = db.query(func.count(Link.id)).filter(Link.is_active == True).scalar()
     total_clicks = db.query(func.sum(Link.clicks_count)).scalar() or 0
+    total_unique_clicks = db.query(func.sum(Link.unique_clicks_count)).scalar() or 0
 
     # Top 10 links by clicks
     top_links = db.query(Link).order_by(desc(Link.clicks_count)).limit(10).all()
@@ -200,6 +206,7 @@ async def get_overview_stats(
             "short_code": link.short_code,
             "original_url": link.original_url,
             "clicks_count": link.clicks_count,
+            "unique_clicks_count": link.unique_clicks_count,
             "short_url": f"{settings.BASE_URL}/{link.short_code}"
         }
         for link in top_links
@@ -209,6 +216,7 @@ async def get_overview_stats(
         "total_links": total_links,
         "active_links": active_links,
         "total_clicks": total_clicks,
+        "total_unique_clicks": total_unique_clicks,
         "top_links": top_links_data
     }
 
@@ -309,3 +317,28 @@ async def remove_from_blacklist(
     db.commit()
 
     return {"message": f"IP {ip_address} removed from blacklist"}
+
+
+@router.get("/links/{link_id}/analytics", response_model=LinkAnalytics)
+async def get_link_analytics_endpoint(
+    link_id: int,
+    period: Literal["24h", "7d", "30d", "90d"] = Query("7d"),
+    group_by: Literal["hour", "day"] = Query("day"),
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    """
+    Get detailed analytics for a specific link.
+
+    Query params:
+    - period: "24h" | "7d" | "30d" | "90d" (default: "7d")
+    - group_by: "hour" | "day" (default: "day")
+
+    Requires authentication.
+    """
+    link = db.query(Link).filter(Link.id == link_id).first()
+
+    if not link:
+        raise HTTPException(status_code=404, detail="Link not found")
+
+    return get_link_analytics(db, link, period, group_by)

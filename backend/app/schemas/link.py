@@ -24,6 +24,7 @@ class LinkResponse(BaseModel):
     created_at: datetime
     created_by: Optional[str] = None
     clicks_count: int
+    unique_clicks_count: int = 0
     is_active: bool
 
     class Config:

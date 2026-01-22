@@ -11,6 +11,7 @@ from ..models import Link, Click
 from ..schemas.link import LinkCreate, LinkResponse
 from ..core.shortener import generate_short_code, validate_custom_alias, is_code_available
 from ..utils.validators import is_valid_url, is_spam_url, is_ip_blacklisted, get_client_ip
+from ..utils.geo import get_geo_data, check_unique_visitor, record_unique_visitor
 from ..config import settings
 
 router = APIRouter()
@@ -171,14 +172,35 @@ async def redirect_to_url(
         response.headers["Expires"] = "0"
         return response
 
+    # Get client info
+    client_ip = get_client_ip(request)
+    user_agent = request.headers.get('user-agent', '')[:512]
+    referer = request.headers.get('referer', '')[:512]
+
+    # Get geo data
+    geo = get_geo_data(client_ip)
+
+    # Check if unique visitor
+    is_unique, user_agent_hash = check_unique_visitor(db, link.id, client_ip, user_agent)
+
     # Record click statistics
     click = Click(
         link_id=link.id,
-        ip_address=get_client_ip(request),
-        user_agent=request.headers.get('user-agent', '')[:512],
-        referer=request.headers.get('referer', '')[:512]
+        ip_address=client_ip,
+        user_agent=user_agent,
+        referer=referer,
+        country_code=geo.country_code,
+        country_name=geo.country_name,
+        city=geo.city,
+        is_unique=is_unique
     )
     db.add(click)
+    db.flush()  # Get click.id
+
+    # Record unique visitor if new
+    if is_unique:
+        record_unique_visitor(db, link.id, client_ip, user_agent_hash, click.id)
+        link.unique_clicks_count += 1
 
     # Increment click counter
     link.clicks_count += 1

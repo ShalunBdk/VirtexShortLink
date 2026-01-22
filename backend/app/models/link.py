@@ -13,6 +13,7 @@ class Link(Base):
     created_at = Column(DateTime(timezone=True), server_default=func.now())
     created_by = Column(String(100), nullable=True)  # IP address or user_id
     clicks_count = Column(Integer, default=0)
+    unique_clicks_count = Column(Integer, default=0)
     is_active = Column(Boolean, default=True)
 
     # Relationship with clicks

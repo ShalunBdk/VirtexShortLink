@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Admin Panel | Virtex Food Short Links</title>
     <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@600;700;800&family=Roboto:wght@400;500;600&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
         :root {
             --brand-orange: #D64005;
@@ -219,7 +220,7 @@
 
         .stats-grid {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
             gap: 20px;
             margin-bottom: 30px;
         }
@@ -243,6 +244,10 @@
             font-size: 32px;
             font-weight: 700;
             color: var(--brand-orange);
+        }
+
+        .stat-value.green {
+            color: var(--brand-green);
         }
 
         /* Create Link Form */
@@ -290,14 +295,18 @@
             padding: 10px 15px;
             border: none;
             border-radius: 8px;
-            background: rgba(255,255,255,0.2);
-            color: white;
+            background: rgba(255,255,255,0.9);
+            color: var(--text-dark);
             outline: none;
             width: 250px;
         }
 
+        .search-box:focus {
+            background: white;
+        }
+
         .search-box::placeholder {
-            color: rgba(255,255,255,0.7);
+            color: var(--text-grey);
         }
 
         table {
@@ -329,11 +338,20 @@
             background: #FAFAFA;
         }
 
+        tr.selected {
+            background: #FFF3E0;
+        }
+
         .link-code {
             font-family: 'Courier New', monospace;
             font-weight: 600;
             color: var(--brand-orange);
             font-size: 15px;
+            cursor: pointer;
+        }
+
+        .link-code:hover {
+            text-decoration: underline;
         }
 
         .link-url {
@@ -388,6 +406,166 @@
             text-align: center;
             padding: 40px;
             color: var(--brand-orange);
+        }
+
+        /* Analytics Section */
+        .analytics-section {
+            display: none;
+            background: var(--white);
+            border-radius: var(--radius-card);
+            box-shadow: var(--shadow-soft);
+            margin-bottom: 30px;
+            overflow: hidden;
+        }
+
+        .analytics-section.active {
+            display: block;
+        }
+
+        .analytics-header {
+            padding: 20px 25px;
+            background: linear-gradient(135deg, var(--brand-green) 0%, #8fa504 100%);
+            color: white;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .analytics-header h3 {
+            font-family: 'Montserrat', sans-serif;
+            font-size: 18px;
+        }
+
+        .period-selector {
+            display: flex;
+            gap: 8px;
+        }
+
+        .period-btn {
+            padding: 8px 16px;
+            border: none;
+            border-radius: 20px;
+            background: rgba(255,255,255,0.2);
+            color: white;
+            font-weight: 600;
+            font-size: 13px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .period-btn:hover, .period-btn.active {
+            background: white;
+            color: var(--brand-green);
+        }
+
+        .analytics-body {
+            padding: 25px;
+        }
+
+        .analytics-summary {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+
+        .summary-card {
+            background: #F8F9FA;
+            padding: 20px;
+            border-radius: 12px;
+            text-align: center;
+        }
+
+        .summary-value {
+            font-size: 28px;
+            font-weight: 700;
+            color: var(--brand-orange);
+        }
+
+        .summary-label {
+            font-size: 12px;
+            color: var(--text-grey);
+            margin-top: 5px;
+        }
+
+        .charts-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 25px;
+            margin-bottom: 25px;
+        }
+
+        .chart-container {
+            background: #F8F9FA;
+            border-radius: 12px;
+            padding: 20px;
+        }
+
+        .chart-title {
+            font-weight: 600;
+            margin-bottom: 15px;
+            color: var(--text-dark);
+        }
+
+        .chart-wrapper {
+            position: relative;
+            height: 250px;
+        }
+
+        .tables-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr 1fr;
+            gap: 25px;
+        }
+
+        .mini-table {
+            background: #F8F9FA;
+            border-radius: 12px;
+            padding: 20px;
+        }
+
+        .mini-table h4 {
+            font-weight: 600;
+            margin-bottom: 15px;
+            color: var(--text-dark);
+        }
+
+        .mini-table table {
+            width: 100%;
+        }
+
+        .mini-table th, .mini-table td {
+            padding: 10px 12px;
+            font-size: 13px;
+        }
+
+        .mini-table th {
+            background: transparent;
+            color: var(--text-grey);
+        }
+
+        .mini-table td {
+            border-bottom: 1px solid #E0E0E0;
+        }
+
+        .mini-table tr:last-child td {
+            border-bottom: none;
+        }
+
+        .close-analytics {
+            background: rgba(255,255,255,0.2);
+            border: none;
+            color: white;
+            padding: 8px 16px;
+            border-radius: 20px;
+            cursor: pointer;
+            font-weight: 600;
+            transition: all 0.2s;
+        }
+
+        .close-analytics:hover {
+            background: white;
+            color: var(--brand-green);
         }
 
         /* Modal */
@@ -532,9 +710,18 @@
         }
 
         /* Responsive */
+        @media (max-width: 1200px) {
+            .charts-grid {
+                grid-template-columns: 1fr;
+            }
+            .tables-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+
         @media (max-width: 768px) {
             .stats-grid {
-                grid-template-columns: 1fr;
+                grid-template-columns: 1fr 1fr;
             }
 
             .form-row {
@@ -557,6 +744,16 @@
 
             .toast {
                 min-width: auto;
+            }
+
+            .analytics-header {
+                flex-direction: column;
+                gap: 15px;
+            }
+
+            .period-selector {
+                flex-wrap: wrap;
+                justify-content: center;
             }
         }
     </style>
@@ -630,6 +827,10 @@
                     <div class="stat-label">Всего переходов</div>
                     <div class="stat-value" id="totalClicks">0</div>
                 </div>
+                <div class="stat-card">
+                    <div class="stat-label">Уникальных переходов</div>
+                    <div class="stat-value green" id="totalUniqueClicks">0</div>
+                </div>
             </div>
 
             <!-- Create Link Form -->
@@ -654,6 +855,92 @@
                 </form>
             </div>
 
+            <!-- Analytics Section -->
+            <div class="analytics-section" id="analyticsSection">
+                <div class="analytics-header">
+                    <h3>Аналитика: <span id="analyticsLinkCode"></span></h3>
+                    <div class="period-selector">
+                        <button class="period-btn" data-period="24h">24 часа</button>
+                        <button class="period-btn active" data-period="7d">7 дней</button>
+                        <button class="period-btn" data-period="30d">30 дней</button>
+                        <button class="period-btn" data-period="90d">90 дней</button>
+                    </div>
+                    <button class="close-analytics" onclick="closeAnalytics()">Закрыть</button>
+                </div>
+                <div class="analytics-body">
+                    <div class="analytics-summary">
+                        <div class="summary-card">
+                            <div class="summary-value" id="analyticsTotalClicks">0</div>
+                            <div class="summary-label">Всего кликов</div>
+                        </div>
+                        <div class="summary-card">
+                            <div class="summary-value" id="analyticsUniqueClicks">0</div>
+                            <div class="summary-label">Уникальных</div>
+                        </div>
+                        <div class="summary-card">
+                            <div class="summary-value" id="analyticsUniqueRatio">0%</div>
+                            <div class="summary-label">Уникальность</div>
+                        </div>
+                    </div>
+
+                    <div class="charts-grid">
+                        <div class="chart-container">
+                            <div class="chart-title">Клики по времени</div>
+                            <div class="chart-wrapper">
+                                <canvas id="clicksTimeChart"></canvas>
+                            </div>
+                        </div>
+                        <div class="chart-container">
+                            <div class="chart-title">Клики по странам</div>
+                            <div class="chart-wrapper">
+                                <canvas id="clicksCountryChart"></canvas>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="tables-grid">
+                        <div class="mini-table">
+                            <h4>Топ стран</h4>
+                            <table>
+                                <thead>
+                                    <tr>
+                                        <th>Страна</th>
+                                        <th>Клики</th>
+                                        <th>%</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="countriesTableBody"></tbody>
+                            </table>
+                        </div>
+                        <div class="mini-table">
+                            <h4>Топ городов</h4>
+                            <table>
+                                <thead>
+                                    <tr>
+                                        <th>Город</th>
+                                        <th>Клики</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="citiesTableBody"></tbody>
+                            </table>
+                        </div>
+                        <div class="mini-table">
+                            <h4>Источники трафика</h4>
+                            <table>
+                                <thead>
+                                    <tr>
+                                        <th>Источник</th>
+                                        <th>Клики</th>
+                                        <th>%</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="referersTableBody"></tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
             <!-- Links Table -->
             <h2 class="section-title">Управление ссылками</h2>
             <div class="table-container">
@@ -672,6 +959,7 @@
                             <th>Код</th>
                             <th>Оригинальная ссылка</th>
                             <th>Переходы</th>
+                            <th>Уникальные</th>
                             <th>Создана</th>
                             <th>Статус</th>
                             <th>Действия</th>
@@ -691,6 +979,10 @@
     <script>
         let authToken = null;
         let modalCallback = null;
+        let currentAnalyticsLinkId = null;
+        let currentPeriod = '7d';
+        let clicksTimeChart = null;
+        let clicksCountryChart = null;
 
         // Toast notifications
         function showToast(message, type = 'info') {
@@ -825,6 +1117,18 @@
                 loadStats();
                 loadLinks();
             }
+
+            // Period selector events
+            document.querySelectorAll('.period-btn').forEach(btn => {
+                btn.addEventListener('click', () => {
+                    document.querySelectorAll('.period-btn').forEach(b => b.classList.remove('active'));
+                    btn.classList.add('active');
+                    currentPeriod = btn.dataset.period;
+                    if (currentAnalyticsLinkId) {
+                        loadAnalytics(currentAnalyticsLinkId);
+                    }
+                });
+            });
         });
 
         // Load user info
@@ -859,6 +1163,7 @@
                     document.getElementById('totalLinks').textContent = stats.total_links;
                     document.getElementById('activeLinks').textContent = stats.active_links;
                     document.getElementById('totalClicks').textContent = stats.total_clicks;
+                    document.getElementById('totalUniqueClicks').textContent = stats.total_unique_clicks || 0;
                 }
             } catch (error) {
                 console.error('Failed to load stats:', error);
@@ -898,7 +1203,6 @@
 
                 const data = await response.json();
 
-                // Show different message based on whether link existed or was created
                 if (data.existing) {
                     showToast(`Ссылка уже существовала: ${data.short_url}`, 'info');
                 } else {
@@ -958,13 +1262,18 @@
                 } else {
                     links.forEach(link => {
                         const row = document.createElement('tr');
+                        if (link.id === currentAnalyticsLinkId) {
+                            row.classList.add('selected');
+                        }
                         row.innerHTML = `
-                            <td><span class="link-code">${link.short_code}</span></td>
+                            <td><span class="link-code" onclick="showAnalytics(${link.id}, '${link.short_code}')">${link.short_code}</span></td>
                             <td><span class="link-url" title="${link.original_url}">${link.original_url}</span></td>
                             <td><strong>${link.clicks_count}</strong></td>
+                            <td><strong style="color: var(--brand-green)">${link.unique_clicks_count || 0}</strong></td>
                             <td>${new Date(link.created_at).toLocaleDateString('ru-RU')}</td>
                             <td><span class="badge ${link.is_active ? 'badge-active' : 'badge-inactive'}">${link.is_active ? 'Активна' : 'Неактивна'}</span></td>
                             <td>
+                                <button class="btn-icon" onclick="showAnalytics(${link.id}, '${link.short_code}')" title="Аналитика">📊</button>
                                 <button class="btn-icon" onclick="toggleLinkStatus(${link.id})" title="Переключить статус">
                                     ${link.is_active ? '⏸️' : '▶️'}
                                 </button>
@@ -983,6 +1292,225 @@
             } finally {
                 tableLoader.style.display = 'none';
             }
+        }
+
+        // Show analytics for a link
+        async function showAnalytics(linkId, shortCode) {
+            currentAnalyticsLinkId = linkId;
+            document.getElementById('analyticsLinkCode').textContent = shortCode;
+            document.getElementById('analyticsSection').classList.add('active');
+
+            // Highlight selected row
+            document.querySelectorAll('#linksTableBody tr').forEach(row => {
+                row.classList.remove('selected');
+            });
+            event.target.closest('tr')?.classList.add('selected');
+
+            await loadAnalytics(linkId);
+
+            // Scroll to analytics section
+            document.getElementById('analyticsSection').scrollIntoView({ behavior: 'smooth' });
+        }
+
+        // Load analytics data
+        async function loadAnalytics(linkId) {
+            try {
+                const groupBy = currentPeriod === '24h' ? 'hour' : 'day';
+                const response = await fetch(`/api/admin/links/${linkId}/analytics?period=${currentPeriod}&group_by=${groupBy}`, {
+                    headers: {
+                        'Authorization': `Bearer ${authToken}`
+                    }
+                });
+
+                if (!response.ok) {
+                    throw new Error('Failed to load analytics');
+                }
+
+                const data = await response.json();
+
+                // Update summary
+                document.getElementById('analyticsTotalClicks').textContent = data.total_clicks;
+                document.getElementById('analyticsUniqueClicks').textContent = data.unique_clicks;
+                document.getElementById('analyticsUniqueRatio').textContent = Math.round(data.unique_ratio * 100) + '%';
+
+                // Update time chart
+                updateTimeChart(data.clicks_by_time);
+
+                // Update country chart
+                updateCountryChart(data.clicks_by_country);
+
+                // Update tables
+                updateCountriesTable(data.clicks_by_country);
+                updateCitiesTable(data.clicks_by_city);
+                updateReferersTable(data.top_referers);
+
+            } catch (error) {
+                console.error('Failed to load analytics:', error);
+                showToast('Ошибка загрузки аналитики', 'error');
+            }
+        }
+
+        // Update time chart
+        function updateTimeChart(data) {
+            const ctx = document.getElementById('clicksTimeChart').getContext('2d');
+
+            if (clicksTimeChart) {
+                clicksTimeChart.destroy();
+            }
+
+            const labels = data.map(d => {
+                if (d.timestamp.includes(':')) {
+                    return d.timestamp.split(' ')[1] || d.timestamp;
+                }
+                return new Date(d.timestamp).toLocaleDateString('ru-RU', { month: 'short', day: 'numeric' });
+            });
+
+            clicksTimeChart = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: labels,
+                    datasets: [
+                        {
+                            label: 'Всего кликов',
+                            data: data.map(d => d.clicks),
+                            borderColor: '#D64005',
+                            backgroundColor: 'rgba(214, 64, 5, 0.1)',
+                            fill: true,
+                            tension: 0.4
+                        },
+                        {
+                            label: 'Уникальных',
+                            data: data.map(d => d.unique_clicks),
+                            borderColor: '#A6B505',
+                            backgroundColor: 'rgba(166, 181, 5, 0.1)',
+                            fill: true,
+                            tension: 0.4
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            position: 'bottom'
+                        }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            ticks: {
+                                stepSize: 1
+                            }
+                        }
+                    }
+                }
+            });
+        }
+
+        // Update country chart
+        function updateCountryChart(data) {
+            const ctx = document.getElementById('clicksCountryChart').getContext('2d');
+
+            if (clicksCountryChart) {
+                clicksCountryChart.destroy();
+            }
+
+            const topCountries = data.slice(0, 6);
+
+            clicksCountryChart = new Chart(ctx, {
+                type: 'doughnut',
+                data: {
+                    labels: topCountries.map(d => d.country_name || 'Unknown'),
+                    datasets: [{
+                        data: topCountries.map(d => d.clicks),
+                        backgroundColor: [
+                            '#D64005',
+                            '#A6B505',
+                            '#2196F3',
+                            '#FF9800',
+                            '#9C27B0',
+                            '#607D8B'
+                        ]
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            position: 'right'
+                        }
+                    }
+                }
+            });
+        }
+
+        // Update countries table
+        function updateCountriesTable(data) {
+            const tbody = document.getElementById('countriesTableBody');
+            tbody.innerHTML = data.slice(0, 10).map(item => `
+                <tr>
+                    <td>${item.country_name || 'Unknown'}</td>
+                    <td>${item.clicks}</td>
+                    <td>${item.percentage}%</td>
+                </tr>
+            `).join('');
+
+            if (data.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="3" style="text-align: center; color: var(--text-grey)">Нет данных</td></tr>';
+            }
+        }
+
+        // Update cities table
+        function updateCitiesTable(data) {
+            const tbody = document.getElementById('citiesTableBody');
+            tbody.innerHTML = data.slice(0, 10).map(item => `
+                <tr>
+                    <td>${item.city || 'Unknown'}</td>
+                    <td>${item.clicks}</td>
+                </tr>
+            `).join('');
+
+            if (data.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="2" style="text-align: center; color: var(--text-grey)">Нет данных</td></tr>';
+            }
+        }
+
+        // Update referers table
+        function updateReferersTable(data) {
+            const tbody = document.getElementById('referersTableBody');
+            tbody.innerHTML = data.slice(0, 10).map(item => `
+                <tr>
+                    <td title="${item.referer}">${truncateUrl(item.referer)}</td>
+                    <td>${item.clicks}</td>
+                    <td>${item.percentage}%</td>
+                </tr>
+            `).join('');
+
+            if (data.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="3" style="text-align: center; color: var(--text-grey)">Нет данных</td></tr>';
+            }
+        }
+
+        // Truncate URL for display
+        function truncateUrl(url) {
+            if (!url || url === 'Direct') return 'Direct';
+            try {
+                const urlObj = new URL(url);
+                return urlObj.hostname;
+            } catch {
+                return url.length > 30 ? url.substring(0, 30) + '...' : url;
+            }
+        }
+
+        // Close analytics
+        function closeAnalytics() {
+            document.getElementById('analyticsSection').classList.remove('active');
+            currentAnalyticsLinkId = null;
+            document.querySelectorAll('#linksTableBody tr').forEach(row => {
+                row.classList.remove('selected');
+            });
         }
 
         // Search
@@ -1030,6 +1558,9 @@
                     });
 
                     if (response.ok) {
+                        if (currentAnalyticsLinkId === linkId) {
+                            closeAnalytics();
+                        }
                         loadLinks();
                         loadStats();
                         showToast('Ссылка удалена', 'success');
