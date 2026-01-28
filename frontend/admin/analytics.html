@@ -484,6 +484,7 @@
                         <th>Дата / Время</th>
                         <th>IP адрес</th>
                         <th>Гео</th>
+                        <th>ОС</th>
                         <th>Источник</th>
                         <th>Браузер</th>
                         <th>Тип</th>
@@ -709,12 +710,14 @@
                             <span class="country">${click.country_name || 'Unknown'}</span>
                             <span class="city">${click.city || '-'}</span>
                         </td>
+                        <td>${click.device_os || '-'}</td>
                         <td class="referer-cell" title="${click.referer || 'Direct'}">${formatReferer(click.referer)}</td>
                         <td class="referer-cell" title="${click.user_agent || '-'}">${formatUserAgent(click.user_agent)}</td>
                         <td>
                             <span class="badge ${click.is_unique ? 'badge-unique' : 'badge-repeat'}">
                                 ${click.is_unique ? 'Уникальный' : 'Повторный'}
                             </span>
+                            ${click.is_qr_click ? '<span class="badge" style="background: #F3E5F5; color: #9C27B0; margin-left: 4px;">QR</span>' : ''}
                         </td>
                     </tr>
                 `;

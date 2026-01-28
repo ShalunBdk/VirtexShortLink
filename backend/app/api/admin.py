@@ -402,7 +402,9 @@ async def get_link_clicks(
             "country_code": click.country_code,
             "country_name": click.country_name,
             "city": click.city,
-            "is_unique": click.is_unique
+            "is_unique": click.is_unique,
+            "is_qr_click": getattr(click, 'is_qr_click', False),
+            "device_os": getattr(click, 'device_os', None)
         }
         for click in clicks
     ]

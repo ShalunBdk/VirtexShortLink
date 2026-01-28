@@ -672,7 +672,7 @@
                 const percent = total > 0 ? Math.round((item.clicks / total) * 100) : 0;
                 return `
                     <tr>
-                        <td>${getOSIcon(item.os)} ${item.os}</td>
+                        <td>${item.os}</td>
                         <td>${item.clicks}</td>
                         <td>${percent}%</td>
                     </tr>
@@ -680,20 +680,6 @@
             }).join('');
         }
 
-        // Get OS icon
-        function getOSIcon(os) {
-            const icons = {
-                'Windows 10/11': '🪟',
-                'Windows': '🪟',
-                'macOS': '🍎',
-                'iOS': '📱',
-                'Android': '🤖',
-                'Linux': '🐧',
-                'Unknown': '❓',
-                'Other': '💻'
-            };
-            return icons[os] || '💻';
-        }
 
         // Update clicks list
         function updateClicksList(clicks) {
@@ -708,7 +694,7 @@
             clicks.forEach(click => {
                 const date = click.created_at ? new Date(click.created_at).toLocaleString('ru-RU') : '-';
                 const qrBadge = click.is_qr ? '<span class="badge" style="background: #f3e5f5; color: #9c27b0; margin-left: 4px;">QR</span>' : '';
-                const osBadge = click.device_os ? `<span class="badge" style="background: #e3f2fd; color: #1565c0; margin-left: 4px;">${getOSIcon(click.device_os)} ${click.device_os}</span>` : '';
+                const osBadge = click.device_os ? `<span class="badge" style="background: #e3f2fd; color: #1565c0; margin-left: 4px;">${click.device_os}</span>` : '';
                 html += `
                     <div class="click-item">
                         <div class="click-info">
