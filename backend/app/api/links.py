@@ -11,7 +11,7 @@ from ..database import get_db
 from ..models import Link, Click
 from ..schemas.link import LinkCreate, LinkResponse
 from ..core.shortener import generate_short_code, validate_custom_alias, is_code_available
-from ..utils.validators import is_valid_url, is_spam_url, is_ip_blacklisted, get_client_ip
+from ..utils.validators import is_valid_url, is_spam_url, is_ip_blacklisted, get_client_ip, parse_user_agent_os
 from ..utils.geo import get_geo_data, check_unique_visitor, record_unique_visitor
 from ..config import settings
 
@@ -256,6 +256,9 @@ async def redirect_to_url(
     # Check if unique visitor
     is_unique, user_agent_hash = check_unique_visitor(db, link.id, client_ip, user_agent)
 
+    # Detect OS from user agent
+    device_os = parse_user_agent_os(user_agent)
+
     # Record click statistics
     click = Click(
         link_id=link.id,
@@ -265,7 +268,8 @@ async def redirect_to_url(
         country_code=geo.country_code,
         country_name=geo.country_name,
         city=geo.city,
-        is_unique=is_unique
+        is_unique=is_unique,
+        device_os=device_os
     )
     db.add(click)
     db.flush()  # Get click.id

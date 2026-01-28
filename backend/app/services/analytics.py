@@ -136,6 +136,34 @@ def get_clicks_by_city(db: Session, link_id: int, period: str, limit: int = 10) 
     ]
 
 
+def get_clicks_by_os(db: Session, link_id: int, period: str, limit: int = 10) -> List[dict]:
+    """Get clicks aggregated by operating system"""
+    start_date = get_period_start(period)
+
+    results = db.query(
+        Click.device_os,
+        func.count(Click.id).label('clicks')
+    ).filter(
+        Click.link_id == link_id,
+        Click.clicked_at >= start_date
+    ).group_by(
+        Click.device_os
+    ).order_by(
+        func.count(Click.id).desc()
+    ).limit(limit).all()
+
+    total = sum(row.clicks for row in results)
+
+    return [
+        {
+            "os": row.device_os or "Unknown",
+            "clicks": row.clicks,
+            "percentage": round(row.clicks / total * 100, 1) if total > 0 else 0
+        }
+        for row in results
+    ]
+
+
 def get_top_referers(db: Session, link_id: int, period: str, limit: int = 10) -> List[dict]:
     """Get top referer sources"""
     start_date = get_period_start(period)
@@ -175,6 +203,7 @@ def get_link_analytics(db: Session, link: Link, period: str, group_by: str = "da
     # Get aggregated data
     clicks_by_country = get_clicks_by_country(db, link.id, period)
     clicks_by_city = get_clicks_by_city(db, link.id, period)
+    clicks_by_os = get_clicks_by_os(db, link.id, period)
     top_referers = get_top_referers(db, link.id, period)
 
     # Calculate totals for period
@@ -210,5 +239,6 @@ def get_link_analytics(db: Session, link: Link, period: str, group_by: str = "da
         "clicks_by_time": clicks_by_time,
         "clicks_by_country": clicks_by_country,
         "clicks_by_city": clicks_by_city,
+        "clicks_by_os": clicks_by_os,
         "top_referers": top_referers
     }

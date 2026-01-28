@@ -383,6 +383,16 @@ async def get_link_analytics(
 
     clicks_by_country = [{"country": row.country_name or "Unknown", "count": row.count} for row in clicks_by_country_raw]
 
+    # Get clicks by OS
+    clicks_by_os_raw = db.query(
+        Click.device_os,
+        func.count(Click.id).label('clicks')
+    ).filter(
+        Click.link_id == link.id
+    ).group_by(Click.device_os).order_by(func.count(Click.id).desc()).limit(10).all()
+
+    clicks_by_os = [{"os": row.device_os or "Unknown", "clicks": row.clicks} for row in clicks_by_os_raw]
+
     # Get recent clicks
     recent_clicks_raw = db.query(Click).filter(
         Click.link_id == link.id
@@ -396,7 +406,8 @@ async def get_link_analytics(
             "country": click.country_name,
             "city": click.city,
             "is_unique": click.is_unique,
-            "is_qr": getattr(click, 'is_qr_click', False)
+            "is_qr": getattr(click, 'is_qr_click', False),
+            "device_os": getattr(click, 'device_os', None)
         }
         for click in recent_clicks_raw
     ]
@@ -417,5 +428,6 @@ async def get_link_analytics(
         created_at=link.created_at,
         clicks_by_day=clicks_by_day,
         clicks_by_country=clicks_by_country,
+        clicks_by_os=clicks_by_os,
         recent_clicks=recent_clicks
     )

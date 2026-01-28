@@ -32,6 +32,13 @@ class RefererStats(BaseModel):
     percentage: float
 
 
+class OSStats(BaseModel):
+    """Operating system statistics"""
+    os: str
+    clicks: int
+    percentage: float
+
+
 class LinkAnalytics(BaseModel):
     """Complete analytics for a link"""
     link_id: int
@@ -44,4 +51,5 @@ class LinkAnalytics(BaseModel):
     clicks_by_time: List[TimeSeriesPoint]
     clicks_by_country: List[CountryStats]
     clicks_by_city: List[CityStats]
+    clicks_by_os: List[OSStats] = []  # Clicks by operating system
     top_referers: List[RefererStats]

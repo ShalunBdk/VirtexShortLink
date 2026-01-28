@@ -902,7 +902,7 @@
                         </div>
                     </div>
 
-                    <div class="tables-grid">
+                    <div class="tables-grid" style="grid-template-columns: repeat(4, 1fr);">
                         <div class="mini-table">
                             <h4>Топ стран</h4>
                             <table>
@@ -926,6 +926,19 @@
                                     </tr>
                                 </thead>
                                 <tbody id="citiesTableBody"></tbody>
+                            </table>
+                        </div>
+                        <div class="mini-table">
+                            <h4>Операционные системы</h4>
+                            <table>
+                                <thead>
+                                    <tr>
+                                        <th>ОС</th>
+                                        <th>Клики</th>
+                                        <th>%</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="osTableBody"></tbody>
                             </table>
                         </div>
                         <div class="mini-table">
@@ -1385,6 +1398,7 @@
                 // Update tables
                 updateCountriesTable(data.clicks_by_country);
                 updateCitiesTable(data.clicks_by_city);
+                updateOSTable(data.clicks_by_os || []);
                 updateReferersTable(data.top_referers);
 
             } catch (error) {
@@ -1517,6 +1531,22 @@
 
             if (data.length === 0) {
                 tbody.innerHTML = '<tr><td colspan="2" style="text-align: center; color: var(--text-grey)">Нет данных</td></tr>';
+            }
+        }
+
+        // Update OS table
+        function updateOSTable(data) {
+            const tbody = document.getElementById('osTableBody');
+            tbody.innerHTML = data.slice(0, 10).map(item => `
+                <tr>
+                    <td>${item.os || 'Unknown'}</td>
+                    <td>${item.clicks}</td>
+                    <td>${item.percentage}%</td>
+                </tr>
+            `).join('');
+
+            if (data.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="3" style="text-align: center; color: var(--text-grey)">Нет данных</td></tr>';
             }
         }
 

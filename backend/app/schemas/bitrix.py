@@ -53,6 +53,7 @@ class BitrixLinkAnalytics(BaseModel):
     created_at: datetime
     clicks_by_day: List[dict]
     clicks_by_country: List[dict]
+    clicks_by_os: List[dict] = []
     recent_clicks: List[dict]
 
 

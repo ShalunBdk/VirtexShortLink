@@ -126,7 +126,7 @@ from fastapi import Depends
 from sqlalchemy.orm import Session
 from .database import get_db
 from .models import Link, Click
-from .utils.validators import get_client_ip
+from .utils.validators import get_client_ip, parse_user_agent_os
 from .utils.geo import get_geo_data, check_unique_visitor, record_unique_visitor
 from fastapi.responses import RedirectResponse
 from sqlalchemy import func as sql_func
@@ -169,6 +169,9 @@ async def qr_redirect(
     # Check if unique visitor
     is_unique, user_agent_hash = check_unique_visitor(db, link.id, client_ip, user_agent)
 
+    # Detect OS from user agent
+    device_os = parse_user_agent_os(user_agent)
+
     # Record click statistics with QR flag
     click = Click(
         link_id=link.id,
@@ -179,7 +182,8 @@ async def qr_redirect(
         country_name=geo.country_name,
         city=geo.city,
         is_unique=is_unique,
-        is_qr_click=True  # Mark as QR click
+        is_qr_click=True,  # Mark as QR click
+        device_os=device_os
     )
     db.add(click)
     db.flush()

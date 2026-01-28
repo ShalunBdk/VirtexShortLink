@@ -121,3 +121,58 @@ def get_client_ip(request) -> str:
 
     # Otherwise use client.host
     return request.client.host if request.client else "unknown"
+
+
+def parse_user_agent_os(user_agent: str) -> str:
+    """
+    Parse user agent string to detect operating system.
+
+    Args:
+        user_agent: User-Agent header value
+
+    Returns:
+        OS name (Windows, macOS, Linux, Android, iOS, etc.)
+    """
+    if not user_agent:
+        return "Unknown"
+
+    ua_lower = user_agent.lower()
+
+    # Mobile OS detection (check first as they may contain desktop OS strings)
+    if 'iphone' in ua_lower or 'ipad' in ua_lower or 'ipod' in ua_lower:
+        return "iOS"
+    if 'android' in ua_lower:
+        return "Android"
+    if 'windows phone' in ua_lower:
+        return "Windows Phone"
+
+    # Desktop OS detection
+    if 'windows nt 10' in ua_lower:
+        return "Windows 10/11"
+    if 'windows nt 6.3' in ua_lower:
+        return "Windows 8.1"
+    if 'windows nt 6.2' in ua_lower:
+        return "Windows 8"
+    if 'windows nt 6.1' in ua_lower:
+        return "Windows 7"
+    if 'windows' in ua_lower:
+        return "Windows"
+
+    if 'macintosh' in ua_lower or 'mac os x' in ua_lower:
+        return "macOS"
+
+    if 'linux' in ua_lower:
+        if 'ubuntu' in ua_lower:
+            return "Ubuntu"
+        if 'fedora' in ua_lower:
+            return "Fedora"
+        return "Linux"
+
+    if 'cros' in ua_lower:
+        return "Chrome OS"
+
+    # Bots
+    if 'bot' in ua_lower or 'crawler' in ua_lower or 'spider' in ua_lower:
+        return "Bot"
+
+    return "Other"

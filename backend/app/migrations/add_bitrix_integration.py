@@ -115,6 +115,16 @@ def run_migration():
         else:
             print("  - is_qr_click column already exists")
 
+        # 6. Add device_os column to clicks table
+        if 'device_os' not in click_columns:
+            print("Adding device_os column to clicks table...")
+            cursor.execute("""
+                ALTER TABLE clicks ADD COLUMN device_os VARCHAR(50)
+            """)
+            print("  - device_os column added")
+        else:
+            print("  - device_os column already exists")
+
         conn.commit()
         print("\nMigration completed successfully!")
 

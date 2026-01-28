@@ -393,6 +393,19 @@
                         <tbody id="citiesTable"></tbody>
                     </table>
                 </div>
+                <div class="data-table">
+                    <h4>Операционные системы</h4>
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>ОС</th>
+                                <th>Клики</th>
+                                <th>%</th>
+                            </tr>
+                        </thead>
+                        <tbody id="osTable"></tbody>
+                    </table>
+                </div>
             </div>
         </div>
 
@@ -514,6 +527,7 @@
                 // Update tables
                 updateCountriesTable(data.clicks_by_country || []);
                 updateCitiesTable(data.recent_clicks || []);
+                updateOSTable(data.clicks_by_os || []);
 
                 // Update clicks list
                 updateClicksList(data.recent_clicks || []);
@@ -644,6 +658,43 @@
             `).join('');
         }
 
+        // Update OS table
+        function updateOSTable(data) {
+            const tbody = document.getElementById('osTable');
+            const total = data.reduce((sum, d) => sum + d.clicks, 0);
+
+            if (!data || data.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="3" style="text-align: center; color: #999;">Нет данных</td></tr>';
+                return;
+            }
+
+            tbody.innerHTML = data.map(item => {
+                const percent = total > 0 ? Math.round((item.clicks / total) * 100) : 0;
+                return `
+                    <tr>
+                        <td>${getOSIcon(item.os)} ${item.os}</td>
+                        <td>${item.clicks}</td>
+                        <td>${percent}%</td>
+                    </tr>
+                `;
+            }).join('');
+        }
+
+        // Get OS icon
+        function getOSIcon(os) {
+            const icons = {
+                'Windows 10/11': '🪟',
+                'Windows': '🪟',
+                'macOS': '🍎',
+                'iOS': '📱',
+                'Android': '🤖',
+                'Linux': '🐧',
+                'Unknown': '❓',
+                'Other': '💻'
+            };
+            return icons[os] || '💻';
+        }
+
         // Update clicks list
         function updateClicksList(clicks) {
             const container = document.getElementById('clicksListContainer');
@@ -657,6 +708,7 @@
             clicks.forEach(click => {
                 const date = click.created_at ? new Date(click.created_at).toLocaleString('ru-RU') : '-';
                 const qrBadge = click.is_qr ? '<span class="badge" style="background: #f3e5f5; color: #9c27b0; margin-left: 4px;">QR</span>' : '';
+                const osBadge = click.device_os ? `<span class="badge" style="background: #e3f2fd; color: #1565c0; margin-left: 4px;">${getOSIcon(click.device_os)} ${click.device_os}</span>` : '';
                 html += `
                     <div class="click-item">
                         <div class="click-info">
@@ -668,6 +720,7 @@
                                 ${click.is_unique ? 'Уникальный' : 'Повторный'}
                             </span>
                             ${qrBadge}
+                            ${osBadge}
                         </div>
                     </div>
                 `;

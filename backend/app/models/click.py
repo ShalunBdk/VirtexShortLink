@@ -25,6 +25,9 @@ class Click(Base):
     # QR code click flag
     is_qr_click = Column(Boolean, default=False)
 
+    # Device/OS info
+    device_os = Column(String(50), nullable=True)  # Windows, Android, iOS, Linux, macOS, etc.
+
     # Relationship with link
     link = relationship("Link", back_populates="clicks")
 
