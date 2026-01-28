@@ -1,0 +1,681 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Аналитика ссылки | Сокращатель ссылок</title>
+    <script src="//api.bitrix24.com/api/v1/"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif;
+            background: #f5f5f5;
+            color: #333;
+            line-height: 1.5;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #D64005 0%, #ff6b35 100%);
+            color: white;
+            padding: 20px 24px;
+            border-radius: 12px;
+            margin-bottom: 24px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .header h1 {
+            font-size: 20px;
+            font-weight: 600;
+        }
+
+        .back-btn {
+            padding: 8px 16px;
+            background: rgba(255,255,255,0.2);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 14px;
+            text-decoration: none;
+            transition: background 0.2s;
+        }
+
+        .back-btn:hover {
+            background: rgba(255,255,255,0.3);
+        }
+
+        .card {
+            background: white;
+            border-radius: 12px;
+            padding: 24px;
+            margin-bottom: 24px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+        }
+
+        .card-title {
+            font-size: 16px;
+            font-weight: 600;
+            margin-bottom: 16px;
+            color: #1a1a2e;
+        }
+
+        .link-info {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 16px;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+
+        .link-code {
+            font-family: monospace;
+            font-size: 18px;
+            font-weight: 600;
+            color: #D64005;
+            background: #FFF3E0;
+            padding: 8px 16px;
+            border-radius: 8px;
+        }
+
+        .link-url {
+            color: #666;
+            font-size: 14px;
+            max-width: 500px;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+
+        .stat-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+            gap: 16px;
+            margin-bottom: 24px;
+        }
+
+        .stat-card {
+            background: #f8f9fa;
+            padding: 20px;
+            border-radius: 10px;
+            text-align: center;
+        }
+
+        .stat-value {
+            font-size: 28px;
+            font-weight: 700;
+            color: #D64005;
+        }
+
+        .stat-value.green {
+            color: #2e7d32;
+        }
+
+        .stat-label {
+            font-size: 12px;
+            color: #666;
+            margin-top: 4px;
+        }
+
+        .charts-grid {
+            display: grid;
+            grid-template-columns: 2fr 1fr;
+            gap: 20px;
+            margin-bottom: 24px;
+        }
+
+        @media (max-width: 768px) {
+            .charts-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        .chart-container {
+            background: #f8f9fa;
+            border-radius: 10px;
+            padding: 20px;
+        }
+
+        .chart-title {
+            font-weight: 600;
+            margin-bottom: 15px;
+            color: #333;
+        }
+
+        .chart-wrapper {
+            position: relative;
+            height: 250px;
+        }
+
+        .data-tables {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 20px;
+        }
+
+        .data-table {
+            background: #f8f9fa;
+            border-radius: 10px;
+            padding: 20px;
+        }
+
+        .data-table h4 {
+            font-weight: 600;
+            margin-bottom: 12px;
+            font-size: 14px;
+        }
+
+        .data-table table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        .data-table th,
+        .data-table td {
+            padding: 8px 10px;
+            text-align: left;
+            font-size: 13px;
+        }
+
+        .data-table th {
+            color: #666;
+            font-weight: 500;
+            border-bottom: 1px solid #e0e0e0;
+        }
+
+        .data-table td {
+            border-bottom: 1px solid #eee;
+        }
+
+        .data-table tr:last-child td {
+            border-bottom: none;
+        }
+
+        /* Clicks History */
+        .clicks-list {
+            max-height: 400px;
+            overflow-y: auto;
+        }
+
+        .click-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 12px;
+            border-bottom: 1px solid #eee;
+            font-size: 13px;
+        }
+
+        .click-item:last-child {
+            border-bottom: none;
+        }
+
+        .click-info {
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+        }
+
+        .click-date {
+            font-weight: 500;
+        }
+
+        .click-geo {
+            color: #666;
+            font-size: 12px;
+        }
+
+        .badge {
+            display: inline-block;
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 11px;
+            font-weight: 500;
+        }
+
+        .badge-unique {
+            background: #e8f5e9;
+            color: #2e7d32;
+        }
+
+        .badge-repeat {
+            background: #fff3e0;
+            color: #e65100;
+        }
+
+        .loading {
+            text-align: center;
+            padding: 40px;
+            color: #666;
+        }
+
+        .spinner {
+            display: inline-block;
+            width: 24px;
+            height: 24px;
+            border: 2px solid #ddd;
+            border-radius: 50%;
+            border-top-color: #D64005;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        .period-selector {
+            display: flex;
+            gap: 8px;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+        }
+
+        .period-btn {
+            padding: 8px 16px;
+            border: 1px solid #ddd;
+            background: white;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 13px;
+            transition: all 0.2s;
+        }
+
+        .period-btn:hover {
+            border-color: #D64005;
+            color: #D64005;
+        }
+
+        .period-btn.active {
+            background: #D64005;
+            color: white;
+            border-color: #D64005;
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 40px;
+            color: #999;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>Аналитика ссылки</h1>
+            <button onclick="goBack()" class="back-btn">← Назад</button>
+        </div>
+
+        <div class="card">
+            <div class="link-info">
+                <span class="link-code" id="linkCode">---</span>
+                <span class="link-url" id="linkUrl">Загрузка...</span>
+            </div>
+
+            <div class="period-selector">
+                <button class="period-btn" data-period="24h">24 часа</button>
+                <button class="period-btn active" data-period="7d">7 дней</button>
+                <button class="period-btn" data-period="30d">30 дней</button>
+            </div>
+
+            <div class="stat-grid">
+                <div class="stat-card">
+                    <div class="stat-value" id="totalClicks">0</div>
+                    <div class="stat-label">Всего кликов</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-value green" id="uniqueClicks">0</div>
+                    <div class="stat-label">Уникальных</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-value" id="qrClicks" style="color: #9c27b0;">0</div>
+                    <div class="stat-label">По QR-коду</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-value" id="topCountry">-</div>
+                    <div class="stat-label">Топ страна</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="charts-grid">
+            <div class="chart-container">
+                <div class="chart-title">Клики по времени</div>
+                <div class="chart-wrapper">
+                    <canvas id="clicksChart"></canvas>
+                </div>
+            </div>
+            <div class="chart-container">
+                <div class="chart-title">По странам</div>
+                <div class="chart-wrapper">
+                    <canvas id="countriesChart"></canvas>
+                </div>
+            </div>
+        </div>
+
+        <div class="card">
+            <h3 class="card-title">Детальная статистика</h3>
+            <div class="data-tables">
+                <div class="data-table">
+                    <h4>Топ стран</h4>
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Страна</th>
+                                <th>Клики</th>
+                                <th>%</th>
+                            </tr>
+                        </thead>
+                        <tbody id="countriesTable"></tbody>
+                    </table>
+                </div>
+                <div class="data-table">
+                    <h4>Топ городов</h4>
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Город</th>
+                                <th>Клики</th>
+                            </tr>
+                        </thead>
+                        <tbody id="citiesTable"></tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <div class="card">
+            <h3 class="card-title">Последние переходы</h3>
+            <div id="clicksListContainer">
+                <div class="loading">
+                    <div class="spinner"></div>
+                    <p>Загрузка...</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Global state
+        let currentUser = null;
+        let currentDomain = null;
+        let linkId = null;
+        let currentPeriod = '7d';
+        let clicksChart = null;
+        let countriesChart = null;
+
+        // Get parameters from URL
+        const urlParams = new URLSearchParams(window.location.search);
+        linkId = urlParams.get('id');
+        currentUser = urlParams.get('user_id');
+        currentDomain = urlParams.get('domain');
+
+        if (!linkId) {
+            window.location.href = '/bitrix/';
+        }
+
+        // If user_id/domain passed in URL, use them directly
+        if (currentUser && currentDomain) {
+            // Load analytics directly
+            document.addEventListener('DOMContentLoaded', loadAnalytics);
+        } else {
+            // Fallback: try to get from BX24 SDK
+            BX24.init(function() {
+                currentDomain = BX24.getDomain();
+
+                BX24.callMethod('user.current', {}, function(result) {
+                    if (result.error()) {
+                        alert('Ошибка получения данных пользователя');
+                        return;
+                    }
+
+                    currentUser = result.data().ID;
+                    loadAnalytics();
+                });
+            });
+        }
+
+        // API base URL
+        function getApiUrl() {
+            return window.location.origin + '/bitrix/api';
+        }
+
+        // Go back to main page
+        function goBack() {
+            // Use history.back() if possible, otherwise redirect
+            if (window.history.length > 1) {
+                window.history.back();
+            } else {
+                window.location.href = '/bitrix/';
+            }
+        }
+
+        // Period selector
+        document.querySelectorAll('.period-btn').forEach(btn => {
+            btn.addEventListener('click', () => {
+                document.querySelectorAll('.period-btn').forEach(b => b.classList.remove('active'));
+                btn.classList.add('active');
+                currentPeriod = btn.dataset.period;
+                loadAnalytics();
+            });
+        });
+
+        // Load analytics
+        async function loadAnalytics() {
+            try {
+                const response = await fetch(
+                    getApiUrl() + '/links/' + linkId + '/analytics' +
+                    '?user_id=' + currentUser +
+                    '&domain=' + encodeURIComponent(currentDomain)
+                );
+
+                if (!response.ok) {
+                    if (response.status === 404) {
+                        alert('Ссылка не найдена или у вас нет доступа');
+                        window.location.href = '/bitrix/';
+                        return;
+                    }
+                    throw new Error('Ошибка загрузки');
+                }
+
+                const data = await response.json();
+
+                // Update link info
+                document.getElementById('linkCode').textContent = data.short_code;
+                document.getElementById('linkUrl').textContent = data.original_url;
+                document.getElementById('linkUrl').title = data.original_url;
+
+                // Update stats
+                document.getElementById('totalClicks').textContent = data.clicks_count;
+                document.getElementById('uniqueClicks').textContent = data.unique_clicks_count;
+                document.getElementById('qrClicks').textContent = data.qr_clicks_count || 0;
+
+                // Top country
+                if (data.clicks_by_country && data.clicks_by_country.length > 0) {
+                    document.getElementById('topCountry').textContent = data.clicks_by_country[0].country || '-';
+                }
+
+                // Update charts
+                updateClicksChart(data.clicks_by_day || []);
+                updateCountriesChart(data.clicks_by_country || []);
+
+                // Update tables
+                updateCountriesTable(data.clicks_by_country || []);
+                updateCitiesTable(data.recent_clicks || []);
+
+                // Update clicks list
+                updateClicksList(data.recent_clicks || []);
+
+            } catch (error) {
+                console.error('Failed to load analytics:', error);
+                alert('Ошибка загрузки аналитики: ' + error.message);
+            }
+        }
+
+        // Update clicks chart
+        function updateClicksChart(data) {
+            const ctx = document.getElementById('clicksChart').getContext('2d');
+
+            if (clicksChart) clicksChart.destroy();
+
+            if (data.length === 0) {
+                ctx.font = '14px sans-serif';
+                ctx.fillStyle = '#999';
+                ctx.textAlign = 'center';
+                ctx.fillText('Нет данных', ctx.canvas.width / 2, ctx.canvas.height / 2);
+                return;
+            }
+
+            clicksChart = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: data.map(d => d.date),
+                    datasets: [{
+                        label: 'Клики',
+                        data: data.map(d => d.count),
+                        borderColor: '#D64005',
+                        backgroundColor: 'rgba(214, 64, 5, 0.1)',
+                        fill: true,
+                        tension: 0.4
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: { legend: { display: false } },
+                    scales: { y: { beginAtZero: true } }
+                }
+            });
+        }
+
+        // Update countries chart
+        function updateCountriesChart(data) {
+            const ctx = document.getElementById('countriesChart').getContext('2d');
+
+            if (countriesChart) countriesChart.destroy();
+
+            if (data.length === 0) {
+                ctx.font = '14px sans-serif';
+                ctx.fillStyle = '#999';
+                ctx.textAlign = 'center';
+                ctx.fillText('Нет данных', ctx.canvas.width / 2, ctx.canvas.height / 2);
+                return;
+            }
+
+            const topCountries = data.slice(0, 5);
+
+            countriesChart = new Chart(ctx, {
+                type: 'doughnut',
+                data: {
+                    labels: topCountries.map(d => d.country || 'Неизвестно'),
+                    datasets: [{
+                        data: topCountries.map(d => d.count),
+                        backgroundColor: ['#D64005', '#A6B505', '#2196F3', '#FF9800', '#9C27B0']
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: { legend: { position: 'bottom' } }
+                }
+            });
+        }
+
+        // Update countries table
+        function updateCountriesTable(data) {
+            const tbody = document.getElementById('countriesTable');
+            const total = data.reduce((sum, d) => sum + d.count, 0);
+
+            if (data.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="3" style="text-align: center; color: #999;">Нет данных</td></tr>';
+                return;
+            }
+
+            tbody.innerHTML = data.slice(0, 10).map(item => {
+                const percent = total > 0 ? Math.round((item.count / total) * 100) : 0;
+                return `
+                    <tr>
+                        <td>${item.country || 'Неизвестно'}</td>
+                        <td>${item.count}</td>
+                        <td>${percent}%</td>
+                    </tr>
+                `;
+            }).join('');
+        }
+
+        // Update cities table (extract from recent clicks)
+        function updateCitiesTable(clicks) {
+            const tbody = document.getElementById('citiesTable');
+
+            // Count cities
+            const cityCounts = {};
+            clicks.forEach(click => {
+                const city = click.city || 'Неизвестно';
+                cityCounts[city] = (cityCounts[city] || 0) + 1;
+            });
+
+            const cities = Object.entries(cityCounts)
+                .map(([city, count]) => ({ city, count }))
+                .sort((a, b) => b.count - a.count)
+                .slice(0, 10);
+
+            if (cities.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="2" style="text-align: center; color: #999;">Нет данных</td></tr>';
+                return;
+            }
+
+            tbody.innerHTML = cities.map(item => `
+                <tr>
+                    <td>${item.city}</td>
+                    <td>${item.count}</td>
+                </tr>
+            `).join('');
+        }
+
+        // Update clicks list
+        function updateClicksList(clicks) {
+            const container = document.getElementById('clicksListContainer');
+
+            if (clicks.length === 0) {
+                container.innerHTML = '<div class="empty-state">Пока нет переходов</div>';
+                return;
+            }
+
+            let html = '<div class="clicks-list">';
+            clicks.forEach(click => {
+                const date = click.created_at ? new Date(click.created_at).toLocaleString('ru-RU') : '-';
+                const qrBadge = click.is_qr ? '<span class="badge" style="background: #f3e5f5; color: #9c27b0; margin-left: 4px;">QR</span>' : '';
+                html += `
+                    <div class="click-item">
+                        <div class="click-info">
+                            <span class="click-date">${date}</span>
+                            <span class="click-geo">${click.country || 'Неизвестно'}${click.city ? ', ' + click.city : ''}</span>
+                        </div>
+                        <div>
+                            <span class="badge ${click.is_unique ? 'badge-unique' : 'badge-repeat'}">
+                                ${click.is_unique ? 'Уникальный' : 'Повторный'}
+                            </span>
+                            ${qrBadge}
+                        </div>
+                    </div>
+                `;
+            });
+            html += '</div>';
+
+            container.innerHTML = html;
+        }
+    </script>
+</body>
+</html>

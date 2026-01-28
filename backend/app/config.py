@@ -9,6 +9,7 @@ class Settings(BaseSettings):
 
     # Security
     SECRET_KEY: str = "virtexfood-super-secret-key-change-in-production"
+    SESSION_SECRET_KEY: str = "virtexfood-session-secret-change-in-production"
     ALGORITHM: str = "HS256"
     ACCESS_TOKEN_EXPIRE_MINUTES: int = 60 * 24  # 24 hours
 

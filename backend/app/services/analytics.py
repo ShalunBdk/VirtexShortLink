@@ -190,6 +190,13 @@ def get_link_analytics(db: Session, link: Link, period: str, group_by: str = "da
         Click.is_unique == True
     ).scalar() or 0
 
+    # QR clicks count
+    qr_clicks = db.query(func.count(Click.id)).filter(
+        Click.link_id == link.id,
+        Click.clicked_at >= start_date,
+        Click.is_qr_click == True
+    ).scalar() or 0
+
     unique_ratio = round(unique_clicks / total_clicks, 2) if total_clicks > 0 else 0
 
     return {
@@ -198,6 +205,7 @@ def get_link_analytics(db: Session, link: Link, period: str, group_by: str = "da
         "period": period,
         "total_clicks": total_clicks,
         "unique_clicks": unique_clicks,
+        "qr_clicks": qr_clicks,
         "unique_ratio": unique_ratio,
         "clicks_by_time": clicks_by_time,
         "clicks_by_country": clicks_by_country,

@@ -878,6 +878,10 @@
                             <div class="summary-label">Уникальных</div>
                         </div>
                         <div class="summary-card">
+                            <div class="summary-value" id="analyticsQRClicks">0</div>
+                            <div class="summary-label">По QR-коду</div>
+                        </div>
+                        <div class="summary-card">
                             <div class="summary-value" id="analyticsUniqueRatio">0%</div>
                             <div class="summary-label">Уникальность</div>
                         </div>
@@ -946,7 +950,18 @@
             <div class="table-container">
                 <div class="table-header">
                     <span style="font-weight: 600;">Все ссылки</span>
-                    <input type="text" id="searchInput" class="search-box" placeholder="Поиск по коду или URL...">
+                    <div style="display: flex; gap: 10px; align-items: center;">
+                        <select id="ownerTypeFilter" style="padding: 10px 15px; border: none; border-radius: 8px; background: rgba(255,255,255,0.9); color: var(--text-dark); outline: none;">
+                            <option value="">Все владельцы</option>
+                            <option value="anonymous">Анонимные</option>
+                            <option value="bitrix">Битрикс24 (все)</option>
+                            <option value="admin">Админ</option>
+                        </select>
+                        <select id="bitrixUserFilter" style="padding: 10px 15px; border: none; border-radius: 8px; background: rgba(255,255,255,0.9); color: var(--text-dark); outline: none; display: none; min-width: 200px;">
+                            <option value="">Все пользователи B24</option>
+                        </select>
+                        <input type="text" id="searchInput" class="search-box" placeholder="Поиск по коду или URL...">
+                    </div>
                 </div>
 
                 <div id="tableLoader" class="loader" style="display: none;">
@@ -958,6 +973,7 @@
                         <tr>
                             <th>Код</th>
                             <th>Оригинальная ссылка</th>
+                            <th>Владелец</th>
                             <th>Переходы</th>
                             <th>Уникальные</th>
                             <th>Создана</th>
@@ -1032,6 +1048,7 @@
 
         function closeModal() {
             document.getElementById('modalOverlay').classList.remove('active');
+            document.getElementById('modalConfirmBtn').style.display = 'inline-block';
             modalCallback = null;
         }
 
@@ -1223,7 +1240,7 @@
         });
 
         // Load links
-        async function loadLinks(search = '') {
+        async function loadLinks(search = '', ownerType = '', ownerId = '') {
             const tableLoader = document.getElementById('tableLoader');
             const table = document.getElementById('linksTable');
             const noData = document.getElementById('noData');
@@ -1237,6 +1254,13 @@
                 let url = '/api/admin/links?limit=100';
                 if (search) {
                     url += `&search=${encodeURIComponent(search)}`;
+                }
+                if (ownerType && !ownerId) {
+                    // Only apply owner_type filter if no specific owner is selected
+                    url += `&owner_type=${encodeURIComponent(ownerType)}`;
+                }
+                if (ownerId) {
+                    url += `&owner_id=${encodeURIComponent(ownerId)}`;
                 }
 
                 const response = await fetch(url, {
@@ -1265,14 +1289,31 @@
                         if (link.id === currentAnalyticsLinkId) {
                             row.classList.add('selected');
                         }
+
+                        // Format owner info
+                        let ownerHtml = '';
+                        if (link.owner_type === 'bitrix') {
+                            ownerHtml = `<span class="badge" style="background: #E3F2FD; color: #1565C0;">B24</span>
+                                        <small style="display: block; margin-top: 4px; color: var(--text-grey);">
+                                            ${link.owner_name || 'Пользователь'}
+                                            <br><span style="font-size: 10px;">${link.owner_domain || ''}</span>
+                                        </small>`;
+                        } else if (link.owner_type === 'admin') {
+                            ownerHtml = '<span class="badge" style="background: #FFF3E0; color: #E65100;">Админ</span>';
+                        } else {
+                            ownerHtml = '<span class="badge" style="background: #F5F5F5; color: #757575;">Аноним</span>';
+                        }
+
                         row.innerHTML = `
                             <td><span class="link-code" onclick="showAnalytics(${link.id}, '${link.short_code}')">${link.short_code}</span></td>
                             <td><span class="link-url" title="${link.original_url}">${link.original_url}</span></td>
+                            <td>${ownerHtml}</td>
                             <td><strong>${link.clicks_count}</strong></td>
                             <td><strong style="color: var(--brand-green)">${link.unique_clicks_count || 0}</strong></td>
                             <td>${new Date(link.created_at).toLocaleDateString('ru-RU')}</td>
                             <td><span class="badge ${link.is_active ? 'badge-active' : 'badge-inactive'}">${link.is_active ? 'Активна' : 'Неактивна'}</span></td>
                             <td>
+                                <button class="btn-icon" onclick="showQRCode('${link.short_code}')" title="QR-код">🔲</button>
                                 <button class="btn-icon" onclick="showAnalytics(${link.id}, '${link.short_code}')" title="Быстрая аналитика">📊</button>
                                 <button class="btn-icon" onclick="openAnalyticsPage(${link.id})" title="Подробная аналитика">📈</button>
                                 <button class="btn-icon" onclick="toggleLinkStatus(${link.id})" title="Переключить статус">
@@ -1332,6 +1373,7 @@
                 // Update summary
                 document.getElementById('analyticsTotalClicks').textContent = data.total_clicks;
                 document.getElementById('analyticsUniqueClicks').textContent = data.unique_clicks;
+                document.getElementById('analyticsQRClicks').textContent = data.qr_clicks || 0;
                 document.getElementById('analyticsUniqueRatio').textContent = Math.round(data.unique_ratio * 100) + '%';
 
                 // Update time chart
@@ -1519,14 +1561,66 @@
             });
         }
 
-        // Search
+        // Search and filter
         let searchTimeout;
         document.getElementById('searchInput').addEventListener('input', (e) => {
             clearTimeout(searchTimeout);
             searchTimeout = setTimeout(() => {
-                loadLinks(e.target.value);
+                applyFilters();
             }, 300);
         });
+
+        document.getElementById('ownerTypeFilter').addEventListener('change', (e) => {
+            const bitrixUserFilter = document.getElementById('bitrixUserFilter');
+            // Show bitrix user filter only when "bitrix" is selected
+            if (e.target.value === 'bitrix') {
+                bitrixUserFilter.style.display = 'block';
+                loadBitrixUsers();
+            } else {
+                bitrixUserFilter.style.display = 'none';
+                bitrixUserFilter.value = '';
+            }
+            applyFilters();
+        });
+
+        document.getElementById('bitrixUserFilter').addEventListener('change', () => {
+            applyFilters();
+        });
+
+        function applyFilters() {
+            const search = document.getElementById('searchInput').value;
+            const ownerType = document.getElementById('ownerTypeFilter').value;
+            const ownerId = document.getElementById('bitrixUserFilter').value;
+            loadLinks(search, ownerType, ownerId);
+        }
+
+        // Load Bitrix users for filter
+        async function loadBitrixUsers() {
+            const select = document.getElementById('bitrixUserFilter');
+
+            // Don't reload if already loaded
+            if (select.options.length > 1) return;
+
+            try {
+                const response = await fetch('/api/admin/bitrix-users', {
+                    headers: {
+                        'Authorization': `Bearer ${authToken}`
+                    }
+                });
+
+                if (response.ok) {
+                    const users = await response.json();
+                    users.forEach(user => {
+                        const option = document.createElement('option');
+                        option.value = user.id;
+                        option.textContent = `${user.name || 'User ' + user.bitrix_user_id} (${user.links_count} ссылок)`;
+                        select.appendChild(option);
+                    });
+                }
+            } catch (error) {
+                console.error('Failed to load Bitrix users:', error);
+            }
+        }
 
         // Toggle link status
         async function toggleLinkStatus(linkId) {
@@ -1577,6 +1671,39 @@
                     showToast(error.message, 'error');
                 }
             });
+        }
+
+        // Show QR Code modal
+        function showQRCode(shortCode) {
+            const qrUrl = `/api/qr/${shortCode}?size=10`;
+            const downloadUrl = `/api/qr/${shortCode}?size=15`;
+
+            const modalContent = `
+                <div style="text-align: center;">
+                    <img src="${qrUrl}" alt="QR Code" style="max-width: 300px; border: 1px solid #eee; border-radius: 8px;">
+                    <p style="margin-top: 15px; color: var(--text-grey); font-size: 13px;">
+                        Сканирование QR-кода отслеживается отдельно в аналитике
+                    </p>
+                    <div style="margin-top: 20px; display: flex; gap: 10px; justify-content: center;">
+                        <a href="${downloadUrl}" download="qr_${shortCode}.png" class="btn-primary" style="display: inline-block; padding: 10px 20px; text-decoration: none; font-size: 14px;">
+                            Скачать PNG
+                        </a>
+                        <button onclick="copyQRUrl('${shortCode}')" class="btn-secondary" style="padding: 10px 20px; font-size: 14px;">
+                            Копировать QR-ссылку
+                        </button>
+                    </div>
+                </div>
+            `;
+
+            document.getElementById('modalTitle').textContent = `QR-код: ${shortCode}`;
+            document.getElementById('modalMessage').innerHTML = modalContent;
+            document.getElementById('modalConfirmBtn').style.display = 'none';
+            document.getElementById('modalOverlay').classList.add('active');
+        }
+
+        function copyQRUrl(shortCode) {
+            const qrUrl = `${window.location.origin}/q/${shortCode}`;
+            copyShortUrl(qrUrl);
         }
 
         // Copy short URL with fallback

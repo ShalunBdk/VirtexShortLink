@@ -1,10 +1,11 @@
 from fastapi import APIRouter, HTTPException, Depends, Request
-from fastapi.responses import RedirectResponse, HTMLResponse
+from fastapi.responses import RedirectResponse, HTMLResponse, StreamingResponse
 from sqlalchemy.orm import Session
 from pathlib import Path
 from sqlalchemy import func
 from slowapi import Limiter
 from slowapi.util import get_remote_address
+import io
 
 from ..database import get_db
 from ..models import Link, Click
@@ -13,6 +14,15 @@ from ..core.shortener import generate_short_code, validate_custom_alias, is_code
 from ..utils.validators import is_valid_url, is_spam_url, is_ip_blacklisted, get_client_ip
 from ..utils.geo import get_geo_data, check_unique_visitor, record_unique_visitor
 from ..config import settings
+
+# Try to import qrcode, handle if not installed
+try:
+    import qrcode
+    from qrcode.image.styledpil import StyledPilImage
+    from qrcode.image.styles.moduledrawers import RoundedModuleDrawer
+    QR_AVAILABLE = True
+except ImportError:
+    QR_AVAILABLE = False
 
 router = APIRouter()
 limiter = Limiter(key_func=get_remote_address)
@@ -79,10 +89,13 @@ async def create_short_link(
             detail="URL appears to be spam and cannot be shortened"
         )
 
-    # Check if this URL already exists (to avoid duplicates)
+    # Check if this URL already exists for anonymous users (deduplication within anonymous links only)
+    # Bitrix24 users have their own deduplication in the /bitrix/api/links endpoint
     existing_link = db.query(Link).filter(
         Link.original_url == link_data.url,
-        Link.is_active == True
+        Link.is_active == True,
+        Link.owner_id == None,  # Only check anonymous links
+        Link.owner_type == 'anonymous'
     ).first()
 
     if existing_link:
@@ -137,6 +150,66 @@ async def create_short_link(
         "original_url": link_data.url,
         "existing": False
     }
+
+
+@router.get("/qr/{short_code}")
+async def get_qr_code(
+    short_code: str,
+    size: int = 10,
+    db: Session = Depends(get_db)
+):
+    """
+    Generate QR code for a short link.
+    The QR code points to /q/{short_code} to track QR scans.
+
+    Parameters:
+    - size: QR code size (box_size), default 10
+    """
+    if not QR_AVAILABLE:
+        raise HTTPException(
+            status_code=503,
+            detail="QR code generation is not available. Install qrcode library."
+        )
+
+    # Find link
+    link = db.query(Link).filter(
+        func.lower(Link.short_code) == short_code.lower()
+    ).first()
+
+    if not link:
+        raise HTTPException(status_code=404, detail="Link not found")
+
+    if not link.is_active:
+        raise HTTPException(status_code=410, detail="Link is inactive")
+
+    # Generate QR code URL (uses /q/ prefix to track QR clicks)
+    qr_url = f"{settings.BASE_URL}/q/{link.short_code}"
+
+    # Create QR code
+    qr = qrcode.QRCode(
+        version=1,
+        error_correction=qrcode.constants.ERROR_CORRECT_M,
+        box_size=size,
+        border=2,
+    )
+    qr.add_data(qr_url)
+    qr.make(fit=True)
+
+    # Create image
+    img = qr.make_image(fill_color="#D64005", back_color="white")
+
+    # Save to bytes
+    img_bytes = io.BytesIO()
+    img.save(img_bytes, format='PNG')
+    img_bytes.seek(0)
+
+    return StreamingResponse(
+        img_bytes,
+        media_type="image/png",
+        headers={
+            "Content-Disposition": f"inline; filename=qr_{short_code}.png"
+        }
+    )
 
 
 @router.get("/{short_code}")

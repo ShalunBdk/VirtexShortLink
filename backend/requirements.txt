@@ -11,3 +11,5 @@ python-multipart>=0.0.20
 slowapi>=0.1.9
 email-validator>=2.0.0
 httpx>=0.25.0
+itsdangerous>=2.1.0
+qrcode[pil]>=7.4.0

@@ -39,6 +39,7 @@ class LinkAnalytics(BaseModel):
     period: str  # "24h", "7d", "30d", "90d"
     total_clicks: int
     unique_clicks: int
+    qr_clicks: int = 0  # Clicks from QR code scans
     unique_ratio: float
     clicks_by_time: List[TimeSeriesPoint]
     clicks_by_country: List[CountryStats]

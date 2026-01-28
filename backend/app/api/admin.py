@@ -4,7 +4,7 @@ from sqlalchemy.orm import Session
 from sqlalchemy import func, desc
 
 from ..database import get_db
-from ..models import Link, Click, User, IPBlacklist
+from ..models import Link, Click, User, IPBlacklist, BitrixUser
 from ..schemas.link import LinkResponse, LinkUpdate, LinkStats
 from ..schemas.analytics import LinkAnalytics
 from ..core.security import get_current_user
@@ -14,12 +14,14 @@ from ..config import settings
 router = APIRouter(prefix="/admin", tags=["admin"])
 
 
-@router.get("/links", response_model=List[LinkResponse])
+@router.get("/links")
 async def get_all_links(
     skip: int = Query(0, ge=0),
     limit: int = Query(100, ge=1, le=1000),
     search: Optional[str] = None,
     active_only: bool = False,
+    owner_type: Optional[str] = Query(None, description="Filter by owner type: anonymous, bitrix, admin"),
+    owner_id: Optional[int] = Query(None, description="Filter by specific Bitrix user ID"),
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user)
 ):
@@ -33,6 +35,14 @@ async def get_all_links(
     # Filter by active status
     if active_only:
         query = query.filter(Link.is_active == True)
+
+    # Filter by owner type
+    if owner_type:
+        query = query.filter(Link.owner_type == owner_type)
+
+    # Filter by specific owner
+    if owner_id:
+        query = query.filter(Link.owner_id == owner_id)
 
     # Search by short_code or original_url
     if search:
@@ -48,9 +58,16 @@ async def get_all_links(
     # Pagination
     links = query.offset(skip).limit(limit).all()
 
-    # Add short_url to each link
+    # Add short_url and owner info to each link
     result = []
     for link in links:
+        # Get owner info if bitrix user
+        owner_name = None
+        owner_domain = None
+        if link.owner_id and link.owner:
+            owner_name = link.owner.name or f"User {link.owner.bitrix_user_id}"
+            owner_domain = link.owner.bitrix_domain
+
         link_dict = {
             "id": link.id,
             "short_code": link.short_code,
@@ -60,9 +77,40 @@ async def get_all_links(
             "created_by": link.created_by,
             "clicks_count": link.clicks_count,
             "unique_clicks_count": link.unique_clicks_count,
-            "is_active": link.is_active
+            "is_active": link.is_active,
+            "owner_type": link.owner_type or "anonymous",
+            "owner_id": link.owner_id,
+            "owner_name": owner_name,
+            "owner_domain": owner_domain
         }
         result.append(link_dict)
+
+    return result
+
+
+@router.get("/bitrix-users")
+async def get_bitrix_users(
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    """
+    Get list of all Bitrix24 users who have created links.
+
+    Requires authentication.
+    """
+    users = db.query(BitrixUser).order_by(BitrixUser.created_at.desc()).all()
+
+    result = []
+    for user in users:
+        links_count = db.query(func.count(Link.id)).filter(Link.owner_id == user.id).scalar()
+        result.append({
+            "id": user.id,
+            "bitrix_user_id": user.bitrix_user_id,
+            "bitrix_domain": user.bitrix_domain,
+            "name": user.name,
+            "created_at": user.created_at,
+            "links_count": links_count
+        })
 
     return result
 

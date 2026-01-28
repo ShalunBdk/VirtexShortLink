@@ -22,6 +22,9 @@ class Click(Base):
     # Unique click flag
     is_unique = Column(Boolean, default=True)
 
+    # QR code click flag
+    is_qr_click = Column(Boolean, default=False)
+
     # Relationship with link
     link = relationship("Link", back_populates="clicks")
 
